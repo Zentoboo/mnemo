@@ -1,0 +1,95 @@
+# Dependencies
+node_modules/
+bower_components/
+
+# Production builds
+dist/
+dist-electron/
+out/
+release/
+build/
+*.app
+*.dmg
+*.snap
+
+# Electron-builder output
+dist_electron/
+
+# Development
+.vite/
+.cache/
+.temp/
+.tmp/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+pnpm-debug.log*
+
+# OS Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Testing
+coverage/
+.nyc_output/
+*.lcov
+
+# Misc
+*.pem
+*.key
+.npmrc
+
+# Auto-generated files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# TypeScript
+*.tsbuildinfo
+
+# macOS specific
+*.dSYM/
+
+# Windows specific
+*.exe
+*.msi
+
+# Linux specific
+*.AppImage
+*.deb
+*.rpm
