@@ -6,6 +6,7 @@ import Settings from './components/Settings'
 import DirectorySelector from './components/DirectorySelector'
 import { parseShortcut, formatShortcut } from './utils/keyboard'
 import './App.css'
+import Icon from './components/Icon'
 
 interface Note {
   filename: string
@@ -192,10 +193,10 @@ function App() {
                     <h2>{selectedNote.replace('.md', '').split('.').join(' > ')}</h2>
                     <button
                       onClick={handleSaveNote}
-                      className="save-button"
+                      className="header-settings-btn"
                       title={`Save${settings ? ` (${formatShortcut(settings.shortcuts.saveNote)})` : ''}`}
                     >
-                      Save
+                      <Icon name="save" size={20} />
                     </button>
                   </div>
                   <textarea

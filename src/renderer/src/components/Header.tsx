@@ -22,12 +22,11 @@ export default function Header({
             <h1 className="header-title">{title}</h1>
             <div className="header-actions">
                 <button
-                    className="header-action-btn"
+                    className="header-settings-btn"
                     onClick={onCommandPaletteClick}
                     title={`Command Palette${commandPaletteShortcut ? ` (${formatShortcut(commandPaletteShortcut)})` : ''}`}
                 >
-                    <Icon name="search" size={18} />
-                    <span>Search</span>
+                    <Icon name="search" size={20} />
                 </button>
                 <button
                     className="header-settings-btn"

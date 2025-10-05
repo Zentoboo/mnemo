@@ -14,31 +14,6 @@
     color: var(--color-text);
 }
 
-.header-actions {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-}
-
-.header-action-btn {
-    padding: 8px;
-    background: var(--color-primary);
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.header-action-btn:hover {
-    background: var(--color-primary-hover);
-}
-
 .header-settings-btn {
     background: transparent;
     border: none;
