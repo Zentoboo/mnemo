@@ -1,0 +1,130 @@
+.sidebar {
+    width: 300px;
+    background: var(--color-background-soft);
+    border-right: 1px solid var(--color-border);
+    padding: 16px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.sidebar-header h2 {
+    margin: 0;
+    font-size: 18px;
+    color: var(--color-text);
+}
+
+.directory-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: var(--color-background);
+    border: 1px solid var(--color-border);
+    border-radius: 6px;
+    margin-bottom: 12px;
+    min-height: 40px;
+}
+
+.current-directory {
+    flex: 1;
+    font-size: 13px;
+    color: var(--color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+.change-dir-btn {
+    padding: 4px 10px;
+    background: transparent;
+    color: var(--color-primary);
+    border: 1px solid var(--color-primary);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+    transition: all 0.2s;
+    flex-shrink: 0;
+}
+
+.change-dir-btn:hover {
+    background: var(--color-primary);
+    color: white;
+}
+
+.tools {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.tools button {
+    flex: 1;
+    padding: 10px;
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.tools button:hover {
+    background: var(--color-primary-hover);
+}
+
+.notes-list {
+    margin-top: 8px;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.empty-state {
+    color: var(--color-text-muted);
+    font-size: 13px;
+    text-align: center;
+    padding: 20px 0;
+    line-height: 1.6;
+}
+
+.note-item {
+    padding: 12px;
+    margin-bottom: 1px;
+    background: var(--color-background);
+    border: 1px solid transparent;
+    border-radius: 0px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.note-item:hover {
+    background: var(--color-background-mute);
+    border-color: var(--color-border);
+}
+
+.note-item.active {
+    background: var(--color-background-mute);
+    border-color: var(--color-primary);
+}
+
+.note-title {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text);
+    margin-bottom: 0px;
+}

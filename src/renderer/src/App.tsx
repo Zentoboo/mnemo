@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react'
+import Header from './components/Header'
+import Sidebar from './components/Sidebar'
 import CommandPalette from './components/CommandPalette'
 import Settings from './components/Settings'
 import DirectorySelector from './components/DirectorySelector'
@@ -163,87 +165,60 @@ function App() {
       />
 
       <div className="app-container">
-        <div className="sidebar">
-          <div className="sidebar-header">
-            <h2>Notes</h2>
-            <button
-              className="icon-button"
-              onClick={() => setIsSettingsOpen(true)}
-              title={`Settings (${settings ? formatShortcut(settings.shortcuts.openSettings) : 'Ctrl+,'})`}
-            >
-              Settings
-            </button>
-          </div>
+        <div className="app-layout">
+          <Header
+            title="Mnemo"
+            onSettingsClick={() => setIsSettingsOpen(true)}
+            onCommandPaletteClick={() => setIsPaletteOpen(true)}
+            settingsShortcut={settings?.shortcuts.openSettings}
+            commandPaletteShortcut={settings?.shortcuts.openCommandPalette}
+          />
 
-          {currentDirectory && (
-            <div className="directory-info">
-              <div className="current-directory" title={currentDirectory}>
-                📁 {currentDirectory.split(/[/\\]/).pop()}
-              </div>
-              <button onClick={handleDirectoryChange} className="change-dir-btn">
-                Change
-              </button>
-            </div>
-          )}
+          <div className="app-content">
+            <Sidebar
+              notes={notes}
+              selectedNote={selectedNote}
+              currentDirectory={currentDirectory}
+              refreshShortcut={settings?.shortcuts.refreshNotes}
+              onNoteSelect={handleSelectNote}
+              onRefresh={loadNotes}
+              onDirectoryChange={handleDirectoryChange}
+            />
 
-          <div className="tools">
-            <button onClick={() => setIsPaletteOpen(true)} title={`Command Palette (${settings ? formatShortcut(settings.shortcuts.openCommandPalette) : 'Ctrl+K'})`}>
-              Search
-            </button>
-            <button onClick={loadNotes} title={`Refresh (${settings ? formatShortcut(settings.shortcuts.refreshNotes) : 'Ctrl+R'})`}>
-              Refresh
-            </button>
-          </div>
-
-          <div className="notes-list">
-            {notes.length === 0 ? (
-              <p className="empty-state">
-                No notes yet. Press {settings ? formatShortcut(settings.shortcuts.openCommandPalette) : 'Ctrl+K'} to create one!
-              </p>
-            ) : (
-              notes.map((note) => (
-                <div
-                  key={note.filename}
-                  className={`note-item ${selectedNote === note.filename ? 'active' : ''}`}
-                  onClick={() => handleSelectNote(note.filename)}
-                >
-                  <div className="note-title">
-                    {note.filename.replace('.md', '')}
+            <div className="editor">
+              {selectedNote ? (
+                <>
+                  <div className="editor-header">
+                    <h2>{selectedNote.replace('.md', '').split('.').join(' > ')}</h2>
+                    <button
+                      onClick={handleSaveNote}
+                      className="save-button"
+                      title={`Save${settings ? ` (${formatShortcut(settings.shortcuts.saveNote)})` : ''}`}
+                    >
+                      Save
+                    </button>
                   </div>
+                  <textarea
+                    className="editor-textarea"
+                    value={noteContent}
+                    onChange={(e) => setNoteContent(e.target.value)}
+                    placeholder="Start writing..."
+                    style={{
+                      fontSize: settings ? `${settings.fontSize}px` : '14px'
+                    }}
+                  />
+                </>
+              ) : (
+                <div className="editor-empty">
+                  <h2>Welcome to Mnemo</h2>
+                  <p>
+                    Press <kbd>{settings ? formatShortcut(settings.shortcuts.openCommandPalette) : 'Ctrl+K'}</kbd> to create or search for notes
+                  </p>
+                  <p className="hint">Try creating: <code>mathematics.calculus</code></p>
                 </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        <div className="editor">
-          {selectedNote ? (
-            <>
-              <div className="editor-header">
-                <h2>{selectedNote.replace('.md', '').split('.').join(' > ')}</h2>
-                <button onClick={handleSaveNote} className="save-button" title={`Save (${settings ? formatShortcut(settings.shortcuts.saveNote) : 'Ctrl+S'})`}>
-                  Save
-                </button>
-              </div>
-              <textarea
-                className="editor-textarea"
-                value={noteContent}
-                onChange={(e) => setNoteContent(e.target.value)}
-                placeholder="Start writing..."
-                style={{
-                  fontSize: settings ? `${settings.fontSize}px` : '14px'
-                }}
-              />
-            </>
-          ) : (
-            <div className="editor-empty">
-              <h2>Welcome to Mnemo</h2>
-              <p>
-                Press <kbd>{settings ? formatShortcut(settings.shortcuts.openCommandPalette) : 'Ctrl+K'}</kbd> to create or search for notes
-              </p>
-              <p className="hint">Try creating: <code>mathematics.calculus</code></p>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </div>
     </>

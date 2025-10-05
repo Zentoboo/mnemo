@@ -24,7 +24,7 @@ export default function DirectorySelector({
   return (
     <div className="directory-selector-overlay">
       <div className="directory-selector">
-        <h1>Welcome to Mnemo</h1>
+        <h1>Mnemo</h1>
         <p className="subtitle">Select a directory to store your notes</p>
 
         {recentDirectories.length > 0 && (
@@ -50,7 +50,7 @@ export default function DirectorySelector({
           onClick={handleBrowse}
           disabled={isSelecting}
         >
-          {isSelecting ? 'Selecting...' : '📂 Browse for Directory'}
+          {isSelecting ? 'Selecting...' : '📂 Browse Directory'}
         </button>
       </div>
     </div>
