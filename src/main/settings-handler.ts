@@ -11,6 +11,8 @@ interface Settings {
   }
   theme: 'dark' | 'light'
   fontSize: number
+  notesDirectory: string | null
+  recentDirectories: string[]
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -21,7 +23,9 @@ const DEFAULT_SETTINGS: Settings = {
     openSettings: 'CommandOrControl+,'
   },
   theme: 'dark',
-  fontSize: 14
+  fontSize: 14,
+  notesDirectory: null,
+  recentDirectories: []
 }
 
 let cachedSettings: Settings | null = null
@@ -31,17 +35,14 @@ const getSettingsPath = () => {
   return path.join(userDataPath, 'settings.json')
 }
 
-// Initialize settings file
 export const initSettings = async () => {
   const settingsPath = getSettingsPath()
   
   try {
     await fs.access(settingsPath)
-    // Settings file exists, load it
     const data = await fs.readFile(settingsPath, 'utf-8')
     const loadedSettings = JSON.parse(data)
     
-    // Migrate old settings to new structure (add missing shortcuts)
     cachedSettings = {
       ...DEFAULT_SETTINGS,
       ...loadedSettings,
@@ -51,17 +52,14 @@ export const initSettings = async () => {
       }
     }
     
-    // Save migrated settings back
     await fs.writeFile(settingsPath, JSON.stringify(cachedSettings, null, 2), 'utf-8')
   } catch {
-    // Settings file doesn't exist, create with defaults
     cachedSettings = DEFAULT_SETTINGS
     await fs.writeFile(settingsPath, JSON.stringify(DEFAULT_SETTINGS, null, 2), 'utf-8')
     console.log('Settings file created with defaults')
   }
 }
 
-// Get all settings
 export const getSettings = async (): Promise<Settings> => {
   if (!cachedSettings) {
     await initSettings()
@@ -69,13 +67,11 @@ export const getSettings = async (): Promise<Settings> => {
   return cachedSettings || DEFAULT_SETTINGS
 }
 
-// Update settings
 export const updateSettings = async (newSettings: Partial<Settings>): Promise<Settings> => {
   const currentSettings = await getSettings()
   const updatedSettings = {
     ...currentSettings,
     ...newSettings,
-    // Deep merge shortcuts
     shortcuts: {
       ...currentSettings.shortcuts,
       ...(newSettings.shortcuts || {})
@@ -89,7 +85,6 @@ export const updateSettings = async (newSettings: Partial<Settings>): Promise<Se
   return updatedSettings
 }
 
-// Reset to defaults
 export const resetSettings = async (): Promise<Settings> => {
   const settingsPath = getSettingsPath()
   await fs.writeFile(settingsPath, JSON.stringify(DEFAULT_SETTINGS, null, 2), 'utf-8')

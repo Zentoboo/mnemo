@@ -9,6 +9,8 @@ declare global {
       writeNote: (filename: string, content: string) => Promise<{ success: boolean }>
       createNote: (hierarchy: string[]) => Promise<string>
       deleteNote: (filename: string) => Promise<{ success: boolean }>
+      selectNotesDirectory: () => Promise<string | null>
+      getCurrentDirectory: () => Promise<string | null>
       getSettings: () => Promise<Settings>
       updateSettings: (settings: Partial<Settings>) => Promise<Settings>
       resetSettings: () => Promise<Settings>
@@ -32,4 +34,6 @@ export interface Settings {
   }
   theme: 'dark' | 'light'
   fontSize: number
+  notesDirectory: string | null
+  recentDirectories: string[]
 }

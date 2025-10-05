@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import CommandPalette from './components/CommandPalette'
 import Settings from './components/Settings'
+import DirectorySelector from './components/DirectorySelector'
 import { parseShortcut, formatShortcut } from './utils/keyboard'
 import './App.css'
 
@@ -19,6 +20,8 @@ interface AppSettings {
   }
   theme: 'dark' | 'light'
   fontSize: number
+  notesDirectory: string | null
+  recentDirectories: string[]
 }
 
 function App() {
@@ -28,39 +31,26 @@ function App() {
   const [isPaletteOpen, setIsPaletteOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [settings, setSettings] = useState<AppSettings | null>(null)
+  const [showDirectorySelector, setShowDirectorySelector] = useState(true)
+  const [currentDirectory, setCurrentDirectory] = useState<string | null>(null)
 
   useEffect(() => {
-    // Load initial data
-    loadNotes()
     loadSettings()
   }, [])
 
   useEffect(() => {
-    if (!settings) return
+    if (!settings || showDirectorySelector) return
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Debug logging
-      console.log('Key pressed:', {
-        key: e.key,
-        ctrlKey: e.ctrlKey,
-        metaKey: e.metaKey,
-        altKey: e.altKey,
-        shiftKey: e.shiftKey
-      })
-
-      // Command Palette shortcut
       const paletteShortcut = parseShortcut(settings.shortcuts.openCommandPalette)
       if (paletteShortcut.matches(e)) {
-        console.log('Command Palette triggered')
         e.preventDefault()
         setIsPaletteOpen(true)
         return
       }
 
-      // Save Note shortcut
       const saveShortcut = parseShortcut(settings.shortcuts.saveNote)
       if (saveShortcut.matches(e)) {
-        console.log('Save triggered')
         e.preventDefault()
         if (selectedNote) {
           handleSaveNote()
@@ -68,21 +58,15 @@ function App() {
         return
       }
 
-      // Refresh Notes shortcut
       const refreshShortcut = parseShortcut(settings.shortcuts.refreshNotes)
       if (refreshShortcut.matches(e)) {
-        console.log('Refresh triggered')
         e.preventDefault()
         loadNotes()
         return
       }
 
-      // Open Settings shortcut
       const settingsShortcut = parseShortcut(settings.shortcuts.openSettings)
-      console.log('Settings shortcut:', settings.shortcuts.openSettings)
-      console.log('Matches?', settingsShortcut.matches(e))
       if (settingsShortcut.matches(e)) {
-        console.log('Settings triggered')
         e.preventDefault()
         setIsSettingsOpen(true)
         return
@@ -91,7 +75,7 @@ function App() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [settings, selectedNote, noteContent])
+  }, [settings, selectedNote, noteContent, showDirectorySelector])
 
   const loadSettings = async () => {
     const data = await window.api.getSettings()
@@ -138,6 +122,27 @@ function App() {
     }
   }
 
+  const handleDirectorySelected = async (path: string) => {
+    setCurrentDirectory(path)
+    setShowDirectorySelector(false)
+    await loadSettings()
+    await loadNotes()
+  }
+
+  const handleDirectoryChange = async () => {
+    setShowDirectorySelector(true)
+    setCurrentDirectory(null)
+  }
+
+  if (showDirectorySelector && settings) {
+    return (
+      <DirectorySelector
+        recentDirectories={settings.recentDirectories}
+        onSelectDirectory={handleDirectorySelected}
+      />
+    )
+  }
+
   return (
     <>
       <CommandPalette
@@ -154,6 +159,7 @@ function App() {
           setIsSettingsOpen(false)
           loadSettings()
         }}
+        onDirectoryChange={handleDirectoryChange}
       />
 
       <div className="app-container">
@@ -169,11 +175,22 @@ function App() {
             </button>
           </div>
 
+          {currentDirectory && (
+            <div className="directory-info">
+              <div className="current-directory" title={currentDirectory}>
+                📁 {currentDirectory.split(/[/\\]/).pop()}
+              </div>
+              <button onClick={handleDirectoryChange} className="change-dir-btn">
+                Change
+              </button>
+            </div>
+          )}
+
           <div className="tools">
             <button onClick={() => setIsPaletteOpen(true)} title={`Command Palette (${settings ? formatShortcut(settings.shortcuts.openCommandPalette) : 'Ctrl+K'})`}>
-              Command Palette
+              Search
             </button>
-            <button onClick={loadNotes} title={`refresh (${settings ? formatShortcut(settings.shortcuts.refreshNotes) : 'Ctrl+R'})`}>
+            <button onClick={loadNotes} title={`Refresh (${settings ? formatShortcut(settings.shortcuts.refreshNotes) : 'Ctrl+R'})`}>
               Refresh
             </button>
           </div>
@@ -193,7 +210,6 @@ function App() {
                   <div className="note-title">
                     {note.filename.replace('.md', '')}
                   </div>
-                  {/* <div className="note-path">{note.hierarchy.length} level{note.hierarchy.length > 1 ? 's' : ''}</div> */}
                 </div>
               ))
             )}

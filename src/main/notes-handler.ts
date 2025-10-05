@@ -1,16 +1,51 @@
-import { app } from 'electron'
+import { app, dialog, BrowserWindow } from 'electron'
 import * as fs from 'fs/promises'
 import * as path from 'path'
+import * as settingsHandler from './settings-handler'
 
-// Get the notes directory path
-const getNotesDir = () => {
+const getNotesDir = async () => {
+  const settings = await settingsHandler.getSettings()
+  
+  if (settings.notesDirectory) {
+    return settings.notesDirectory
+  }
+  
   const userDataPath = app.getPath('userData')
   return path.join(userDataPath, 'notes')
 }
 
-// Ensure notes directory exists
+export const selectNotesDirectory = async (browserWindow: BrowserWindow | null) => {
+  const result = await dialog.showOpenDialog(browserWindow || BrowserWindow.getFocusedWindow()!, {
+    properties: ['openDirectory', 'createDirectory'],
+    title: 'Select Notes Directory'
+  })
+  
+  if (result.canceled || result.filePaths.length === 0) {
+    return null
+  }
+  
+  const selectedPath = result.filePaths[0]
+  
+  const settings = await settingsHandler.getSettings()
+  const recentDirs = [selectedPath, ...settings.recentDirectories.filter(d => d !== selectedPath)].slice(0, 5)
+  
+  await settingsHandler.updateSettings({
+    notesDirectory: selectedPath,
+    recentDirectories: recentDirs
+  })
+  
+  await initNotesDir()
+  
+  return selectedPath
+}
+
+export const getCurrentDirectory = async () => {
+  const settings = await settingsHandler.getSettings()
+  return settings.notesDirectory
+}
+
 export const initNotesDir = async () => {
-  const notesDir = getNotesDir()
+  const notesDir = await getNotesDir()
   try {
     await fs.access(notesDir)
   } catch {
@@ -19,14 +54,12 @@ export const initNotesDir = async () => {
   }
 }
 
-// Parse filename into hierarchy
 const parseFileName = (filename: string): string[] => {
   return filename.replace('.md', '').split('.')
 }
 
-// Get all notes with their hierarchy
 export const getNotes = async () => {
-  const notesDir = getNotesDir()
+  const notesDir = await getNotesDir()
   
   try {
     const files = await fs.readdir(notesDir)
@@ -49,9 +82,8 @@ export const getNotes = async () => {
   }
 }
 
-// Read a specific note
 export const readNote = async (filename: string) => {
-  const notesDir = getNotesDir()
+  const notesDir = await getNotesDir()
   const filePath = path.join(notesDir, filename)
   
   try {
@@ -63,9 +95,8 @@ export const readNote = async (filename: string) => {
   }
 }
 
-// Write/update a note
 export const writeNote = async (filename: string, content: string) => {
-  const notesDir = getNotesDir()
+  const notesDir = await getNotesDir()
   const filePath = path.join(notesDir, filename)
   
   try {
@@ -77,7 +108,6 @@ export const writeNote = async (filename: string, content: string) => {
   }
 }
 
-// Create a new note
 export const createNote = async (hierarchy: string[]) => {
   const filename = hierarchy.join('.') + '.md'
   const initialContent = `# ${hierarchy[hierarchy.length - 1]}\n\nStart writing here...`
@@ -86,9 +116,8 @@ export const createNote = async (hierarchy: string[]) => {
   return filename
 }
 
-// Delete a note
 export const deleteNote = async (filename: string) => {
-  const notesDir = getNotesDir()
+  const notesDir = await getNotesDir()
   const filePath = path.join(notesDir, filename)
   
   try {

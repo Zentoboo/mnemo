@@ -11,14 +11,17 @@ interface Settings {
   }
   theme: 'dark' | 'light'
   fontSize: number
+  notesDirectory: string | null
+  recentDirectories: string[]
 }
 
 interface SettingsProps {
   isOpen: boolean
   onClose: () => void
+  onDirectoryChange?: () => void
 }
 
-export default function Settings({ isOpen, onClose }: SettingsProps) {
+export default function Settings({ isOpen, onClose, onDirectoryChange }: SettingsProps) {
   const [originalSettings, setOriginalSettings] = useState<Settings | null>(null)
   const [settings, setSettings] = useState<Settings | null>(null)
   const [editingShortcut, setEditingShortcut] = useState<string | null>(null)
@@ -105,6 +108,16 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
     }
   }
 
+  const handleChangeDirectory = async () => {
+    const newPath = await window.api.selectNotesDirectory()
+    if (newPath) {
+      await loadSettings()
+      if (onDirectoryChange) {
+        onDirectoryChange()
+      }
+    }
+  }
+
   if (!isOpen || !settings) return null
 
   return (
@@ -116,6 +129,34 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
         </div>
 
         <div className="settings-content">
+          <section className="settings-section">
+            <h3>Notes Directory</h3>
+
+            <div className="setting-item directory-setting">
+              <label>Current Directory</label>
+              <div className="directory-display">
+                {settings.notesDirectory || 'Not set'}
+              </div>
+            </div>
+
+            <button onClick={handleChangeDirectory} className="secondary-button">
+              Change Notes Directory
+            </button>
+
+            {settings.recentDirectories.length > 0 && (
+              <div className="recent-dirs-section">
+                <label className="recent-label">Recent Directories</label>
+                <div className="recent-dirs-list">
+                  {settings.recentDirectories.map(dir => (
+                    <div key={dir} className="recent-dir-item">
+                      📁 {dir}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+
           <section className="settings-section">
             <h3>Keyboard Shortcuts</h3>
 

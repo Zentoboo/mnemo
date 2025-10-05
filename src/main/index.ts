@@ -5,9 +5,10 @@ import icon from '../../resources/icon.png?asset'
 import * as notesHandler from './notes-handler'
 import * as settingsHandler from './settings-handler'
 
+let mainWindow: BrowserWindow | null = null
+
 function createWindow(): void {
-  // Create the browser window.
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     show: false,
@@ -20,7 +21,7 @@ function createWindow(): void {
   })
 
   mainWindow.on('ready-to-show', () => {
-    mainWindow.show()
+    mainWindow!.show()
   })
 
   mainWindow.webContents.setWindowOpenHandler((details) => {
@@ -28,7 +29,6 @@ function createWindow(): void {
     return { action: 'deny' }
   })
 
-  // HMR for renderer base on electron-vite cli.
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
@@ -36,16 +36,12 @@ function createWindow(): void {
   }
 }
 
-// This method will be called when Electron has finished initialization
 app.whenReady().then(async () => {
-  // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
 
-  // Initialize notes directory and settings
-  await notesHandler.initNotesDir()
   await settingsHandler.initSettings()
+  await notesHandler.initNotesDir()
 
-  // Setup IPC handlers for notes
   ipcMain.handle('notes:getAll', async () => {
     return await notesHandler.getNotes()
   })
@@ -66,7 +62,14 @@ app.whenReady().then(async () => {
     return await notesHandler.deleteNote(filename)
   })
 
-  // Setup IPC handlers for settings
+  ipcMain.handle('notes:selectDirectory', async () => {
+    return await notesHandler.selectNotesDirectory(mainWindow)
+  })
+
+  ipcMain.handle('notes:getCurrentDirectory', async () => {
+    return await notesHandler.getCurrentDirectory()
+  })
+
   ipcMain.handle('settings:get', async () => {
     return await settingsHandler.getSettings()
   })
@@ -79,7 +82,6 @@ app.whenReady().then(async () => {
     return await settingsHandler.resetSettings()
   })
 
-  // Default open or close DevTools by F12 in development
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
