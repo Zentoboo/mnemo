@@ -6,6 +6,8 @@ interface Settings {
   shortcuts: {
     openCommandPalette: string
     saveNote: string
+    refreshNotes: string
+    openSettings: string
   }
   theme: 'dark' | 'light'
   fontSize: number
@@ -14,7 +16,9 @@ interface Settings {
 const DEFAULT_SETTINGS: Settings = {
   shortcuts: {
     openCommandPalette: 'CommandOrControl+K',
-    saveNote: 'CommandOrControl+S'
+    saveNote: 'CommandOrControl+S',
+    refreshNotes: 'CommandOrControl+R',
+    openSettings: 'CommandOrControl+,'
   },
   theme: 'dark',
   fontSize: 14
@@ -35,7 +39,20 @@ export const initSettings = async () => {
     await fs.access(settingsPath)
     // Settings file exists, load it
     const data = await fs.readFile(settingsPath, 'utf-8')
-    cachedSettings = JSON.parse(data)
+    const loadedSettings = JSON.parse(data)
+    
+    // Migrate old settings to new structure (add missing shortcuts)
+    cachedSettings = {
+      ...DEFAULT_SETTINGS,
+      ...loadedSettings,
+      shortcuts: {
+        ...DEFAULT_SETTINGS.shortcuts,
+        ...loadedSettings.shortcuts
+      }
+    }
+    
+    // Save migrated settings back
+    await fs.writeFile(settingsPath, JSON.stringify(cachedSettings, null, 2), 'utf-8')
   } catch {
     // Settings file doesn't exist, create with defaults
     cachedSettings = DEFAULT_SETTINGS

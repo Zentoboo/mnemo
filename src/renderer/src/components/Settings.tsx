@@ -6,6 +6,8 @@ interface Settings {
   shortcuts: {
     openCommandPalette: string
     saveNote: string
+    refreshNotes: string
+    openSettings: string
   }
   theme: 'dark' | 'light'
   fontSize: number
@@ -17,9 +19,10 @@ interface SettingsProps {
 }
 
 export default function Settings({ isOpen, onClose }: SettingsProps) {
+  const [originalSettings, setOriginalSettings] = useState<Settings | null>(null)
   const [settings, setSettings] = useState<Settings | null>(null)
   const [editingShortcut, setEditingShortcut] = useState<string | null>(null)
-  const [pendingKey, setPendingKey] = useState<string>('')
+  const [hasChanges, setHasChanges] = useState(false)
 
   useEffect(() => {
     if (isOpen) {
@@ -28,100 +31,105 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
   }, [isOpen])
 
   useEffect(() => {
+    if (originalSettings && settings) {
+      const changed = JSON.stringify(originalSettings) !== JSON.stringify(settings)
+      setHasChanges(changed)
+    }
+  }, [settings, originalSettings])
+
+  useEffect(() => {
     if (!editingShortcut) return
 
     const handleKeyDown = (e: KeyboardEvent) => {
       e.preventDefault()
-      
+
       if (e.key === 'Escape') {
         setEditingShortcut(null)
-        setPendingKey('')
         return
       }
 
-      // Build the accelerator string
       const modifiers: string[] = []
       if (e.ctrlKey || e.metaKey) modifiers.push('CommandOrControl')
       if (e.altKey) modifiers.push('Alt')
       if (e.shiftKey) modifiers.push('Shift')
-      
+
       const key = e.key.toUpperCase()
-      if (key.length === 1 || ['Enter', 'Space', 'Tab'].includes(key)) {
+      if (key.length === 1 || ['ENTER', 'SPACE', 'TAB'].includes(key)) {
         const accelerator = [...modifiers, key].join('+')
-        setPendingKey(accelerator)
+
+        const updatedSettings = {
+          ...settings!,
+          shortcuts: {
+            ...settings!.shortcuts,
+            [editingShortcut]: accelerator
+          }
+        }
+        setSettings(updatedSettings)
+        setEditingShortcut(null)
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [editingShortcut])
+  }, [editingShortcut, settings])
 
   const loadSettings = async () => {
     const data = await window.api.getSettings()
+    setOriginalSettings(data)
     setSettings(data)
+    setHasChanges(false)
   }
 
-  const handleSaveShortcut = async () => {
-    if (!editingShortcut || !pendingKey || !settings) return
+  const handleSave = async () => {
+    if (!settings) return
+    await window.api.updateSettings(settings)
+    onClose()
+  }
 
-    const updatedSettings = {
-      ...settings,
-      shortcuts: {
-        ...settings.shortcuts,
-        [editingShortcut]: pendingKey
+  const handleCancel = () => {
+    if (hasChanges) {
+      if (confirm('You have unsaved changes. Discard them?')) {
+        onClose()
       }
+    } else {
+      onClose()
     }
-
-    await window.api.updateSettings(updatedSettings)
-    setSettings(updatedSettings)
-    setEditingShortcut(null)
-    setPendingKey('')
   }
 
   const handleReset = async () => {
     if (confirm('Reset all settings to default?')) {
       const defaults = await window.api.resetSettings()
+      setOriginalSettings(defaults)
       setSettings(defaults)
+      setHasChanges(false)
     }
   }
 
   if (!isOpen || !settings) return null
 
   return (
-    <div className="settings-overlay" onClick={onClose}>
+    <div className="settings-overlay" onClick={handleCancel}>
       <div className="settings-panel" onClick={(e) => e.stopPropagation()}>
         <div className="settings-header">
-          <h2>Settings</h2>
-          <button className="close-button" onClick={onClose}>✕</button>
+          <h2>Settings {hasChanges && <span className="unsaved-indicator">•</span>}</h2>
+          <button className="close-button" onClick={handleCancel}>✕</button>
         </div>
 
         <div className="settings-content">
           <section className="settings-section">
             <h3>Keyboard Shortcuts</h3>
-            
+
             <div className="setting-item">
               <label>Open Command Palette</label>
               {editingShortcut === 'openCommandPalette' ? (
                 <div className="shortcut-editor">
-                  <div className="shortcut-input">
-                    {pendingKey ? formatShortcut(pendingKey) : 'Press keys...'}
-                  </div>
-                  <button onClick={handleSaveShortcut} disabled={!pendingKey}>
-                    Save
-                  </button>
-                  <button onClick={() => {
-                    setEditingShortcut(null)
-                    setPendingKey('')
-                  }}>
-                    Cancel
-                  </button>
+                  <div className="shortcut-input recording">Press keys...</div>
+                  <button onClick={() => setEditingShortcut(null)}>Cancel</button>
                 </div>
               ) : (
                 <div className="shortcut-display">
                   <kbd>{formatShortcut(settings.shortcuts.openCommandPalette)}</kbd>
-                  <button onClick={() => setEditingShortcut('openCommandPalette')}>
-                    Edit
-                  </button>
+                  <button onClick={() => setEditingShortcut('openCommandPalette')}>Change</button>
                 </div>
               )}
             </div>
@@ -130,25 +138,43 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
               <label>Save Note</label>
               {editingShortcut === 'saveNote' ? (
                 <div className="shortcut-editor">
-                  <div className="shortcut-input">
-                    {pendingKey ? formatShortcut(pendingKey) : 'Press keys...'}
-                  </div>
-                  <button onClick={handleSaveShortcut} disabled={!pendingKey}>
-                    Save
-                  </button>
-                  <button onClick={() => {
-                    setEditingShortcut(null)
-                    setPendingKey('')
-                  }}>
-                    Cancel
-                  </button>
+                  <div className="shortcut-input recording">Press keys...</div>
+                  <button onClick={() => setEditingShortcut(null)}>Cancel</button>
                 </div>
               ) : (
                 <div className="shortcut-display">
                   <kbd>{formatShortcut(settings.shortcuts.saveNote)}</kbd>
-                  <button onClick={() => setEditingShortcut('saveNote')}>
-                    Edit
-                  </button>
+                  <button onClick={() => setEditingShortcut('saveNote')}>Change</button>
+                </div>
+              )}
+            </div>
+
+            <div className="setting-item">
+              <label>Refresh Notes</label>
+              {editingShortcut === 'refreshNotes' ? (
+                <div className="shortcut-editor">
+                  <div className="shortcut-input recording">Press keys...</div>
+                  <button onClick={() => setEditingShortcut(null)}>Cancel</button>
+                </div>
+              ) : (
+                <div className="shortcut-display">
+                  <kbd>{formatShortcut(settings.shortcuts.refreshNotes)}</kbd>
+                  <button onClick={() => setEditingShortcut('refreshNotes')}>Change</button>
+                </div>
+              )}
+            </div>
+
+            <div className="setting-item">
+              <label>Open Settings</label>
+              {editingShortcut === 'openSettings' ? (
+                <div className="shortcut-editor">
+                  <div className="shortcut-input recording">Press keys...</div>
+                  <button onClick={() => setEditingShortcut(null)}>Cancel</button>
+                </div>
+              ) : (
+                <div className="shortcut-display">
+                  <kbd>{formatShortcut(settings.shortcuts.openSettings)}</kbd>
+                  <button onClick={() => setEditingShortcut('openSettings')}>Change</button>
                 </div>
               )}
             </div>
@@ -156,15 +182,13 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
 
           <section className="settings-section">
             <h3>Appearance</h3>
-            
+
             <div className="setting-item">
               <label>Theme</label>
-              <select 
+              <select
                 value={settings.theme}
-                onChange={async (e) => {
-                  const newSettings = { ...settings, theme: e.target.value as 'dark' | 'light' }
-                  await window.api.updateSettings(newSettings)
-                  setSettings(newSettings)
+                onChange={(e) => {
+                  setSettings({ ...settings, theme: e.target.value as 'dark' | 'light' })
                 }}
               >
                 <option value="dark">Dark</option>
@@ -174,15 +198,13 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
 
             <div className="setting-item">
               <label>Font Size</label>
-              <input 
-                type="number" 
-                min="10" 
-                max="24" 
+              <input
+                type="number"
+                min="10"
+                max="24"
                 value={settings.fontSize}
-                onChange={async (e) => {
-                  const newSettings = { ...settings, fontSize: parseInt(e.target.value) }
-                  await window.api.updateSettings(newSettings)
-                  setSettings(newSettings)
+                onChange={(e) => {
+                  setSettings({ ...settings, fontSize: parseInt(e.target.value) })
                 }}
               />
             </div>
@@ -193,8 +215,8 @@ export default function Settings({ isOpen, onClose }: SettingsProps) {
           <button onClick={handleReset} className="reset-button">
             Reset to Defaults
           </button>
-          <button onClick={onClose} className="primary-button">
-            Done
+          <button onClick={handleSave} className="primary-button" disabled={!hasChanges}>
+            Save Changes
           </button>
         </div>
       </div>

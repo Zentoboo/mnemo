@@ -8,7 +8,28 @@ export const parseShortcut = (accelerator: string) => {
     keys: parts,
     matches: (event: KeyboardEvent): boolean => {
       const pressedKey = event.key.toLowerCase()
-      const lastKey = parts[parts.length - 1].toLowerCase()
+      let lastKey = parts[parts.length - 1].toLowerCase()
+      
+      // Handle special keys that might have different representations
+      // Map common special characters
+      const keyMap: Record<string, string> = {
+        ',': ',',
+        '.': '.',
+        '/': '/',
+        ';': ';',
+        "'": "'",
+        '[': '[',
+        ']': ']',
+        '\\': '\\',
+        '-': '-',
+        '=': '=',
+        '`': '`'
+      }
+      
+      // If the last key is a special character, use it directly
+      if (keyMap[lastKey]) {
+        lastKey = keyMap[lastKey]
+      }
       
       // Check if the main key matches
       if (pressedKey !== lastKey) return false
@@ -35,8 +56,6 @@ export const parseShortcut = (accelerator: string) => {
   }
 }
 
-// Format shortcut for display
-// e.g., "CommandOrControl+K" -> "Ctrl+K" (or "⌘K" on Mac)
 export const formatShortcut = (accelerator: string): string => {
   const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0
   

@@ -27,6 +27,8 @@ export interface Settings {
   shortcuts: {
     openCommandPalette: string
     saveNote: string
+    refreshNotes: string
+    openSettings: string
   }
   theme: 'dark' | 'light'
   fontSize: number

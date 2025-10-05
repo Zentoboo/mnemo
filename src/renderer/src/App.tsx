@@ -14,6 +14,8 @@ interface AppSettings {
   shortcuts: {
     openCommandPalette: string
     saveNote: string
+    refreshNotes: string
+    openSettings: string
   }
   theme: 'dark' | 'light'
   fontSize: number
@@ -37,9 +39,19 @@ function App() {
     if (!settings) return
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Debug logging
+      console.log('Key pressed:', {
+        key: e.key,
+        ctrlKey: e.ctrlKey,
+        metaKey: e.metaKey,
+        altKey: e.altKey,
+        shiftKey: e.shiftKey
+      })
+
       // Command Palette shortcut
       const paletteShortcut = parseShortcut(settings.shortcuts.openCommandPalette)
       if (paletteShortcut.matches(e)) {
+        console.log('Command Palette triggered')
         e.preventDefault()
         setIsPaletteOpen(true)
         return
@@ -48,10 +60,31 @@ function App() {
       // Save Note shortcut
       const saveShortcut = parseShortcut(settings.shortcuts.saveNote)
       if (saveShortcut.matches(e)) {
+        console.log('Save triggered')
         e.preventDefault()
         if (selectedNote) {
           handleSaveNote()
         }
+        return
+      }
+
+      // Refresh Notes shortcut
+      const refreshShortcut = parseShortcut(settings.shortcuts.refreshNotes)
+      if (refreshShortcut.matches(e)) {
+        console.log('Refresh triggered')
+        e.preventDefault()
+        loadNotes()
+        return
+      }
+
+      // Open Settings shortcut
+      const settingsShortcut = parseShortcut(settings.shortcuts.openSettings)
+      console.log('Settings shortcut:', settings.shortcuts.openSettings)
+      console.log('Matches?', settingsShortcut.matches(e))
+      if (settingsShortcut.matches(e)) {
+        console.log('Settings triggered')
+        e.preventDefault()
+        setIsSettingsOpen(true)
         return
       }
     }
@@ -119,7 +152,7 @@ function App() {
         isOpen={isSettingsOpen}
         onClose={() => {
           setIsSettingsOpen(false)
-          loadSettings() // Reload settings when closed
+          loadSettings()
         }}
       />
 
@@ -130,16 +163,20 @@ function App() {
             <button
               className="icon-button"
               onClick={() => setIsSettingsOpen(true)}
-              title="Settings"
+              title={`Settings (${settings ? formatShortcut(settings.shortcuts.openSettings) : 'Ctrl+,'})`}
             >
               Settings
             </button>
           </div>
 
-          <button onClick={() => setIsPaletteOpen(true)}>
-            New Note ({settings ? formatShortcut(settings.shortcuts.openCommandPalette) : 'Ctrl+K'})
-          </button>
-          <button onClick={loadNotes}>Refresh</button>
+          <div className="tools">
+            <button onClick={() => setIsPaletteOpen(true)} title={`Command Palette (${settings ? formatShortcut(settings.shortcuts.openCommandPalette) : 'Ctrl+K'})`}>
+              Command Palette
+            </button>
+            <button onClick={loadNotes} title={`refresh (${settings ? formatShortcut(settings.shortcuts.refreshNotes) : 'Ctrl+R'})`}>
+              Refresh
+            </button>
+          </div>
 
           <div className="notes-list">
             {notes.length === 0 ? (
@@ -154,9 +191,9 @@ function App() {
                   onClick={() => handleSelectNote(note.filename)}
                 >
                   <div className="note-title">
-                    {note.hierarchy[note.hierarchy.length - 1]}
+                    {note.filename.replace('.md', '')}
                   </div>
-                  <div className="note-path">{note.path}</div>
+                  {/* <div className="note-path">{note.hierarchy.length} level{note.hierarchy.length > 1 ? 's' : ''}</div> */}
                 </div>
               ))
             )}
@@ -168,8 +205,8 @@ function App() {
             <>
               <div className="editor-header">
                 <h2>{selectedNote.replace('.md', '').split('.').join(' > ')}</h2>
-                <button onClick={handleSaveNote} className="save-button">
-                  Save ({settings ? formatShortcut(settings.shortcuts.saveNote) : 'Ctrl+S'})
+                <button onClick={handleSaveNote} className="save-button" title={`Save (${settings ? formatShortcut(settings.shortcuts.saveNote) : 'Ctrl+S'})`}>
+                  Save
                 </button>
               </div>
               <textarea

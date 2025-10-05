@@ -28,7 +28,7 @@ export default function CommandPalette({
 
   // Filter notes based on query
   const filteredNotes = notes.filter((note) =>
-    note.path.toLowerCase().includes(query.toLowerCase())
+    note.filename.toLowerCase().includes(query.toLowerCase())
   )
 
   // Check if query looks like a new note (contains dots or is just text)
@@ -122,8 +122,9 @@ export default function CommandPalette({
             filteredNotes.map((note, index) => (
               <div
                 key={note.filename}
-                className={`command-palette-item ${index === selectedIndex ? 'selected' : ''
-                  }`}
+                className={`command-palette-item ${
+                  index === selectedIndex ? 'selected' : ''
+                }`}
                 onClick={() => {
                   onSelectNote(note.filename)
                   onClose()
@@ -131,25 +132,28 @@ export default function CommandPalette({
               >
                 <span className="item-icon">📄</span>
                 <div className="item-content">
-                  <div className="item-title">{note.hierarchy[note.hierarchy.length - 1]}</div>
-                  <div className="item-path">{note.path}</div>
+                  <div className="item-title">{note.filename.replace('.md', '')}</div>
+                  <div className="item-path">{note.hierarchy.length} level{note.hierarchy.length > 1 ? 's' : ''}</div>
                 </div>
               </div>
             ))
           ) : query.trim().length > 0 ? (
             <div
-              className={`command-palette-item create-new ${selectedIndex === 0 ? 'selected' : ''
-                }`}
+              className={`command-palette-item create-new ${
+                selectedIndex === 0 ? 'selected' : ''
+              }`}
               onClick={handleSelect}
             >
               <span className="item-icon">✨</span>
               <div className="item-content">
-                <div className="item-title">Create new note</div>
-                <div className="item-path">{getHierarchyFromQuery().join(' > ')}</div>
+                <div className="item-title">Create: {getHierarchyFromQuery().join('.')}</div>
+                <div className="item-path">New markdown file</div>
               </div>
             </div>
           ) : (
-            <div className="command-palette-empty">Type to search or create a note...</div>
+            <div className="command-palette-empty">
+              Type to search or create a note...
+            </div>
           )}
         </div>
 

@@ -80,10 +80,10 @@
 
 .note-item {
   padding: 12px;
-  margin-bottom: 8px;
+  margin-bottom: 1px;
   background: var(--color-background);
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: 0px;
   cursor: pointer;
   transition: all 0.2s;
 }
@@ -102,7 +102,7 @@
   font-size: 14px;
   font-weight: 500;
   color: var(--color-text);
-  margin-bottom: 4px;
+  margin-bottom: 0px;
 }
 
 .note-path {
@@ -203,4 +203,10 @@
 .hint {
   margin-top: 20px;
   font-size: 13px;
+}
+
+.tools {
+  display: grid;
+  grid-template-columns: repeat(2,1fr);
+  gap: 10px;
 }
