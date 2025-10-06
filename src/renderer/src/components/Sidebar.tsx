@@ -57,28 +57,24 @@ export default function Sidebar({
 
             {/* used later on */}
             <div className='sidebar-checklist'>
-                <div className='checkbox-group'>
-                    <label className='checkbox-container'>
-                        <input
-                            type="checkbox"
-                            checked={isNote}
-                            onChange={(e) => setIsNote(e.target.checked)}
-                        />
-                        <div className='checkbox-checkmark'></div>
-                    </label>
+                <label className='checkbox-group'>
+                    <input
+                        type="checkbox"
+                        checked={isNote}
+                        onChange={(e) => setIsNote(e.target.checked)}
+                    />
+                    <span className='custom-checkbox'></span>
                     <p>note</p>
-                </div>
-                <div className='checkbox-group'>
-                    <label className='checkbox-container'>
-                        <input
-                            type="checkbox"
-                            checked={isFlashcard}
-                            onChange={(e) => setIsFlashcard(e.target.checked)}
-                        />
-                        <div className='checkbox-checkmark'></div>
-                    </label>
+                </label>
+                <label className='checkbox-group'>
+                    <input
+                        type="checkbox"
+                        checked={isFlashcard}
+                        onChange={(e) => setIsFlashcard(e.target.checked)}
+                    />
+                    <span className='custom-checkbox'></span>
                     <p>flashcard</p>
-                </div>
+                </label>
             </div>
 
             <div className="notes-list">

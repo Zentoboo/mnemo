@@ -25,6 +25,11 @@
     display: flex;
     justify-content: space-evenly;
     align-items: center;
+    background-color: var(--color-background);
+    border: 1px solid var(--color-border);
+    padding: 10px 12px;
+    border-radius: 6px;
+    gap: 1rem;
 }
 
 .checkbox-group {
@@ -33,61 +38,54 @@
     gap: 0.5rem;
     color: var(--color-text-muted);
     transition: color 0.2s ease;
+    cursor: pointer;
 }
 
 .checkbox-group p {
-    font-size: 1rem;
+    font-size: 0.9rem;
+    margin: 0;
+    line-height: 1;
 }
 
-.checkbox-container {
+.checkbox-group input[type="checkbox"] {
+    display: none;
+}
+
+.custom-checkbox {
+    display: inline-block;
+    width: 18px;
+    height: 18px;
+    border: 2px solid var(--color-text-muted);
+    border-radius: 3px;
     position: relative;
-    cursor: pointer;
-    width: 1.2em;
-    height: 1.2em;
-    user-select: none;
-    border: 1.2px solid var(--color-text-muted);
-    display: block;
     transition: border-color 0.2s ease;
+    flex-shrink: 0;
 }
 
-.checkbox-container input {
+.custom-checkbox::after {
+    content: "";
     position: absolute;
-    opacity: 0;
-    cursor: pointer;
-    height: 0;
-    width: 0;
-}
-
-.checkbox-checkmark {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-}
-
-.checkbox-checkmark:after {
-    content: '';
-    position: absolute;
-    top: 25%;
-    left: 25%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 10px;
+    height: 10px;
     background-color: var(--color-text);
-    width: 50%;
-    height: 50%;
-    transform: scale(0);
-    transition: transform 0.1s ease;
+    border-radius: 2px;
+    opacity: 0;
+    transition: opacity 0.15s ease;
 }
 
-.checkbox-container input:checked~.checkbox-checkmark:after {
-    transform: scale(1);
+.checkbox-group input[type="checkbox"]:checked+.custom-checkbox::after {
+    opacity: 1;
+}
+
+.checkbox-group input[type="checkbox"]:checked+.custom-checkbox {
+    border-color: var(--color-text);
 }
 
 .checkbox-group:has(input:checked) {
     color: var(--color-text);
-}
-
-.checkbox-group:has(input:checked) .checkbox-container {
-    border-color: var(--color-text);
 }
 
 .directory-info {
@@ -127,7 +125,7 @@
 
 .change-dir-btn:hover {
     background: var(--color-primary);
-    color: white;
+    color: var(--color-text);
 }
 
 .notes-list {
@@ -145,7 +143,7 @@
 }
 
 .note-item {
-    padding: 12px;
+    padding: 4px 12px;
     margin-bottom: 1px;
     background: var(--color-background);
     border: 1px solid transparent;
@@ -166,7 +164,7 @@
 
 .note-title {
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 400;
     color: var(--color-text);
     margin-bottom: 0px;
 }

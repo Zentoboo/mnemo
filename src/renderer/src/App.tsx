@@ -7,6 +7,7 @@ import DirectorySelector from './components/DirectorySelector'
 import { parseShortcut, formatShortcut } from './utils/keyboard'
 import './App.css'
 import Icon from './components/Icon'
+import ToggleSwitch from './components/ToggleSwitch'
 
 interface Note {
   filename: string
@@ -36,6 +37,7 @@ function App() {
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [showDirectorySelector, setShowDirectorySelector] = useState(true)
   const [currentDirectory, setCurrentDirectory] = useState<string | null>(null)
+  const [viewMode, setViewMode] = useState('edit')
 
   useEffect(() => {
     loadSettings()
@@ -191,13 +193,24 @@ function App() {
                 <>
                   <div className="editor-header">
                     <h2>{selectedNote.replace('.md', '').split('.').join(' > ')}</h2>
-                    <button
-                      onClick={handleSaveNote}
-                      className="header-settings-btn"
-                      title={`Save${settings ? ` (${formatShortcut(settings.shortcuts.saveNote)})` : ''}`}
-                    >
-                      <Icon name="save" size={20} />
-                    </button>
+                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center"}}>
+                      <ToggleSwitch
+                        options={[
+                          { value: 'edit', label: 'edit' },
+                          { value: 'view', label: 'view' }
+                        ]}
+                        name="view-mode"
+                        selected={viewMode}
+                        onChange={setViewMode}
+                      />
+                      <button
+                        onClick={handleSaveNote}
+                        className="header-settings-btn"
+                        title={`Save${settings ? ` (${formatShortcut(settings.shortcuts.saveNote)})` : ''}`}
+                      >
+                        <Icon name="save" size={20} />
+                      </button>
+                    </div>
                   </div>
                   <textarea
                     className="editor-textarea"
