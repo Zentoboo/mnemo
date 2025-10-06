@@ -28,7 +28,8 @@ export default function Sidebar({
     onRefresh,
     onDirectoryChange
 }: SidebarProps) {
-    const [isChecked, setIsChecked] = useState(false)
+    const [isNote, setIsNote] = useState(true)
+    const [isFlashcard, setIsFlashcard] = useState(false)
 
     return (
         <div className="sidebar">
@@ -55,23 +56,29 @@ export default function Sidebar({
             )}
 
             {/* used later on */}
-            <div>
-                <label>
-                    <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={(e) => setIsChecked(e.target.checked)}
-                    />
-                    <span>note</span>
-                </label>
-                <label>
-                    <input
-                        type="checkbox"
-                        checked={isChecked}
-                        onChange={(e) => setIsChecked(e.target.checked)}
-                    />
-                    <span>flashcard</span>
-                </label>
+            <div className='sidebar-checklist'>
+                <div className='checkbox-group'>
+                    <label className='checkbox-container'>
+                        <input
+                            type="checkbox"
+                            checked={isNote}
+                            onChange={(e) => setIsNote(e.target.checked)}
+                        />
+                        <div className='checkbox-checkmark'></div>
+                    </label>
+                    <p>note</p>
+                </div>
+                <div className='checkbox-group'>
+                    <label className='checkbox-container'>
+                        <input
+                            type="checkbox"
+                            checked={isFlashcard}
+                            onChange={(e) => setIsFlashcard(e.target.checked)}
+                        />
+                        <div className='checkbox-checkmark'></div>
+                    </label>
+                    <p>flashcard</p>
+                </div>
             </div>
 
             <div className="notes-list">

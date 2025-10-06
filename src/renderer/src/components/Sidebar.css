@@ -21,6 +21,75 @@
     color: var(--color-text);
 }
 
+.sidebar-checklist {
+    display: flex;
+    justify-content: space-evenly;
+    align-items: center;
+}
+
+.checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--color-text-muted);
+    transition: color 0.2s ease;
+}
+
+.checkbox-group p {
+    font-size: 1rem;
+}
+
+.checkbox-container {
+    position: relative;
+    cursor: pointer;
+    width: 1.2em;
+    height: 1.2em;
+    user-select: none;
+    border: 1.2px solid var(--color-text-muted);
+    display: block;
+    transition: border-color 0.2s ease;
+}
+
+.checkbox-container input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.checkbox-checkmark {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.checkbox-checkmark:after {
+    content: '';
+    position: absolute;
+    top: 25%;
+    left: 25%;
+    background-color: var(--color-text);
+    width: 50%;
+    height: 50%;
+    transform: scale(0);
+    transition: transform 0.1s ease;
+}
+
+.checkbox-container input:checked~.checkbox-checkmark:after {
+    transform: scale(1);
+}
+
+.checkbox-group:has(input:checked) {
+    color: var(--color-text);
+}
+
+.checkbox-group:has(input:checked) .checkbox-container {
+    border-color: var(--color-text);
+}
+
 .directory-info {
     display: flex;
     align-items: center;
