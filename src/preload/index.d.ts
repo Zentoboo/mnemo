@@ -14,6 +14,9 @@ declare global {
       getSettings: () => Promise<Settings>
       updateSettings: (settings: Partial<Settings>) => Promise<Settings>
       resetSettings: () => Promise<Settings>
+      getFlashcards: (pattern: string) => Promise<Flashcard[]>
+      saveFlashcardSession: (session: FlashcardSession) => Promise<string>
+      getFlashcardSessions: () => Promise<string[]>
     }
   }
 }
@@ -31,9 +34,36 @@ export interface Settings {
     saveNote: string
     refreshNotes: string
     openSettings: string
+    toggleSidebar: string
   }
   theme: 'dark' | 'light'
   fontSize: number
   notesDirectory: string | null
   recentDirectories: string[]
+}
+
+export interface Flashcard {
+  id: string
+  question: string
+  expectedAnswer: string
+  source: string
+  keywords: string[]
+}
+
+export interface FlashcardResult {
+  cardId: string
+  question: string
+  expectedAnswer: string
+  userAnswer: string
+  keywords: string[]
+  timestamp: string
+}
+
+export interface FlashcardSession {
+  id: string
+  pattern: string
+  cards: Flashcard[]
+  results: FlashcardResult[]
+  createdAt: string
+  completedAt?: string
 }

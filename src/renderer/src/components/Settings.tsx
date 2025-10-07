@@ -8,6 +8,7 @@ interface Settings {
     saveNote: string
     refreshNotes: string
     openSettings: string
+    toggleSidebar: string
   }
   theme: 'dark' | 'light'
   fontSize: number
@@ -201,6 +202,21 @@ export default function Settings({ isOpen, onClose, onDirectoryChange }: Setting
                 <div className="shortcut-display">
                   <kbd>{formatShortcut(settings.shortcuts.refreshNotes)}</kbd>
                   <button onClick={() => setEditingShortcut('refreshNotes')}>Change</button>
+                </div>
+              )}
+            </div>
+
+            <div className="setting-item">
+              <label>Toggle Sidebar</label>
+              {editingShortcut === 'toggleSidebar' ? (
+                <div className="shortcut-editor">
+                  <div className="shortcut-input recording">Press keys...</div>
+                  <button onClick={() => setEditingShortcut(null)}>Cancel</button>
+                </div>
+              ) : (
+                <div className="shortcut-display">
+                  <kbd>{formatShortcut(settings.shortcuts.toggleSidebar)}</kbd>
+                  <button onClick={() => setEditingShortcut('toggleSidebar')}>Change</button>
                 </div>
               )}
             </div>

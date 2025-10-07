@@ -13,6 +13,7 @@ interface CommandPaletteProps {
   notes: Note[]
   onSelectNote: (filename: string) => void
   onCreateNote: (hierarchy: string[]) => void
+  onStartFlashcard: (pattern: string) => void
 }
 
 export default function CommandPalette({
@@ -20,19 +21,28 @@ export default function CommandPalette({
   onClose,
   notes,
   onSelectNote,
-  onCreateNote
+  onCreateNote,
+  onStartFlashcard
 }: CommandPaletteProps) {
   const [query, setQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Filter notes based on query
-  const filteredNotes = notes.filter((note) =>
-    note.filename.toLowerCase().includes(query.toLowerCase())
-  )
+  // Check if query is a flashcard command
+  const isFlashcardCommand = query.trim().startsWith('>flashcard:')
+  const flashcardPattern = isFlashcardCommand
+    ? query.trim().substring(11).trim()
+    : ''
 
-  // Check if query looks like a new note (contains dots or is just text)
-  const isNewNote = query.trim().length > 0 && filteredNotes.length === 0
+  // Filter notes based on query
+  const filteredNotes = isFlashcardCommand
+    ? []
+    : notes.filter((note) =>
+      note.filename.toLowerCase().includes(query.toLowerCase())
+    )
+
+  // Check if query looks like a new note
+  const isNewNote = !isFlashcardCommand && query.trim().length > 0 && filteredNotes.length === 0
 
   // Parse query into hierarchy for new note
   const getHierarchyFromQuery = (): string[] => {
@@ -62,7 +72,7 @@ export default function CommandPalette({
       } else if (e.key === 'ArrowDown') {
         e.preventDefault()
         setSelectedIndex((prev) => {
-          const maxIndex = isNewNote ? 0 : filteredNotes.length - 1
+          const maxIndex = isFlashcardCommand ? 0 : (isNewNote ? 0 : filteredNotes.length - 1)
           return Math.min(prev + 1, maxIndex)
         })
       } else if (e.key === 'ArrowUp') {
@@ -70,7 +80,10 @@ export default function CommandPalette({
         setSelectedIndex((prev) => Math.max(prev - 1, 0))
       } else if (e.key === 'Enter') {
         e.preventDefault()
-        if (isNewNote) {
+        if (isFlashcardCommand && flashcardPattern) {
+          onStartFlashcard(flashcardPattern)
+          onClose()
+        } else if (isNewNote) {
           const hierarchy = getHierarchyFromQuery()
           if (hierarchy.length > 0) {
             onCreateNote(hierarchy)
@@ -85,10 +98,13 @@ export default function CommandPalette({
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, selectedIndex, filteredNotes, isNewNote, query, onClose, onCreateNote, onSelectNote])
+  }, [isOpen, selectedIndex, filteredNotes, isNewNote, isFlashcardCommand, flashcardPattern, query, onClose, onCreateNote, onSelectNote, onStartFlashcard])
 
   const handleSelect = () => {
-    if (isNewNote) {
+    if (isFlashcardCommand && flashcardPattern) {
+      onStartFlashcard(flashcardPattern)
+      onClose()
+    } else if (isNewNote) {
       const hierarchy = getHierarchyFromQuery()
       if (hierarchy.length > 0) {
         onCreateNote(hierarchy)
@@ -109,7 +125,7 @@ export default function CommandPalette({
           ref={inputRef}
           type="text"
           className="command-palette-input"
-          placeholder="Search or create note (e.g., mathematics.calculus)..."
+          placeholder="Search notes or type >flashcard:pattern (e.g., >flashcard:biology.*)"
           value={query}
           onChange={(e) => {
             setQuery(e.target.value)
@@ -118,13 +134,30 @@ export default function CommandPalette({
         />
 
         <div className="command-palette-results">
-          {filteredNotes.length > 0 ? (
+          {isFlashcardCommand ? (
+            flashcardPattern ? (
+              <div
+                className={`command-palette-item create-new ${selectedIndex === 0 ? 'selected' : ''
+                  }`}
+                onClick={handleSelect}
+              >
+                <span className="item-icon">🎴</span>
+                <div className="item-content">
+                  <div className="item-title">Start Flashcard Session: {flashcardPattern}</div>
+                  <div className="item-path">Practice questions from matching notes</div>
+                </div>
+              </div>
+            ) : (
+              <div className="command-palette-empty">
+                Enter a pattern after {'>'}flashcard: (e.g., biology.* or specific.topic)
+              </div>
+            )
+          ) : filteredNotes.length > 0 ? (
             filteredNotes.map((note, index) => (
               <div
                 key={note.filename}
-                className={`command-palette-item ${
-                  index === selectedIndex ? 'selected' : ''
-                }`}
+                className={`command-palette-item ${index === selectedIndex ? 'selected' : ''
+                  }`}
                 onClick={() => {
                   onSelectNote(note.filename)
                   onClose()
@@ -139,9 +172,8 @@ export default function CommandPalette({
             ))
           ) : query.trim().length > 0 ? (
             <div
-              className={`command-palette-item create-new ${
-                selectedIndex === 0 ? 'selected' : ''
-              }`}
+              className={`command-palette-item create-new ${selectedIndex === 0 ? 'selected' : ''
+                }`}
               onClick={handleSelect}
             >
               <span className="item-icon">✨</span>
@@ -152,7 +184,7 @@ export default function CommandPalette({
             </div>
           ) : (
             <div className="command-palette-empty">
-              Type to search or create a note...
+              Type to search, create a note, or start flashcards with {'>'}{'>'}flashcard:pattern
             </div>
           )}
         </div>

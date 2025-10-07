@@ -4,6 +4,7 @@ import Sidebar from './components/Sidebar'
 import CommandPalette from './components/CommandPalette'
 import Settings from './components/Settings'
 import DirectorySelector from './components/DirectorySelector'
+import FlashcardView from './components/FlashcardView'
 import { parseShortcut, formatShortcut } from './utils/keyboard'
 import './App.css'
 import Icon from './components/Icon'
@@ -15,12 +16,39 @@ interface Note {
   path: string
 }
 
+interface Flashcard {
+  id: string
+  question: string
+  expectedAnswer: string
+  source: string
+  keywords: string[]
+}
+
+interface FlashcardResult {
+  cardId: string
+  question: string
+  expectedAnswer: string
+  userAnswer: string
+  keywords: string[]
+  timestamp: string
+}
+
+interface FlashcardSession {
+  id: string
+  pattern: string
+  cards: Flashcard[]
+  results: FlashcardResult[]
+  createdAt: string
+  completedAt?: string
+}
+
 interface AppSettings {
   shortcuts: {
     openCommandPalette: string
     saveNote: string
     refreshNotes: string
     openSettings: string
+    toggleSidebar: string
   }
   theme: 'dark' | 'light'
   fontSize: number
@@ -37,6 +65,10 @@ function App() {
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [showDirectorySelector, setShowDirectorySelector] = useState(true)
   const [currentDirectory, setCurrentDirectory] = useState<string | null>(null)
+  const [showSidebar, setShowSidebar] = useState(true)
+
+  const [flashcardSession, setFlashcardSession] = useState<FlashcardSession | null>(null)
+  const [isFlashcardMode, setIsFlashcardMode] = useState(false)
   const [viewMode, setViewMode] = useState('edit')
 
   useEffect(() => {
@@ -47,6 +79,13 @@ function App() {
     if (!settings || showDirectorySelector) return
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      const sidebarShortcut = parseShortcut(settings.shortcuts.toggleSidebar)
+      if (sidebarShortcut.matches(e)) {
+        e.preventDefault()
+        setShowSidebar(prev => !prev)
+        return
+      }
+
       const paletteShortcut = parseShortcut(settings.shortcuts.openCommandPalette)
       if (paletteShortcut.matches(e)) {
         e.preventDefault()
@@ -80,7 +119,7 @@ function App() {
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [settings, selectedNote, noteContent, showDirectorySelector])
+  }, [settings, selectedNote, noteContent, showDirectorySelector, showSidebar])
 
   const loadSettings = async () => {
     const data = await window.api.getSettings()
@@ -101,6 +140,7 @@ function App() {
       const content = await window.api.readNote(filename)
       setSelectedNote(filename)
       setNoteContent(content)
+      setIsFlashcardMode(false)
     } catch (error) {
       console.error('Failed to read note:', error)
     }
@@ -124,6 +164,67 @@ function App() {
       console.log('Note saved!')
     } catch (error) {
       console.error('Failed to save note:', error)
+    }
+  }
+
+  const handleStartFlashcard = async (pattern: string) => {
+    try {
+      const cards = await window.api.getFlashcards(pattern)
+
+      if (cards.length === 0) {
+        alert(`No flashcards found matching pattern: ${pattern}`)
+        return
+      }
+
+      const session: FlashcardSession = {
+        id: `session-${Date.now()}`,
+        pattern,
+        cards,
+        results: [],
+        createdAt: new Date().toISOString()
+      }
+
+      setFlashcardSession(session)
+      setIsFlashcardMode(true)
+      setSelectedNote(null)
+    } catch (error) {
+      console.error('Failed to start flashcard session:', error)
+      setIsPaletteOpen(false)
+      setTimeout(() => {
+        alert('Failed to load flashcards. Make sure your notes have ## headers for questions.')
+      }, 100)
+    }
+  }
+
+  const handleCompleteFlashcard = async (results: FlashcardResult[]) => {
+    if (!flashcardSession) return
+
+    const completedSession: FlashcardSession = {
+      ...flashcardSession,
+      results,
+      completedAt: new Date().toISOString()
+    }
+
+    try {
+      const savedFilename = await window.api.saveFlashcardSession(completedSession)
+      console.log('Flashcard session saved:', savedFilename)
+
+      setIsFlashcardMode(false)
+      setFlashcardSession(null)
+
+      await loadNotes()
+
+      alert(`Session completed! Results saved to: ${savedFilename}`)
+    } catch (error) {
+      console.error('Failed to save flashcard session:', error)
+      alert('Failed to save session results')
+    }
+  }
+
+  const handleCancelFlashcard = () => {
+    if (confirm('Are you sure you want to cancel this flashcard session? Progress will not be saved.')) {
+      setIsFlashcardMode(false)
+      setFlashcardSession(null)
     }
   }
 
@@ -156,6 +257,7 @@ function App() {
         notes={notes}
         onSelectNote={handleSelectNote}
         onCreateNote={handleCreateNote}
+        onStartFlashcard={handleStartFlashcard}
       />
 
       <Settings
@@ -175,25 +277,36 @@ function App() {
             onCommandPaletteClick={() => setIsPaletteOpen(true)}
             settingsShortcut={settings?.shortcuts.openSettings}
             commandPaletteShortcut={settings?.shortcuts.openCommandPalette}
+            showSidebar={showSidebar}
+            onToggleSidebar={setShowSidebar}
           />
 
           <div className="app-content">
-            <Sidebar
-              notes={notes}
-              selectedNote={selectedNote}
-              currentDirectory={currentDirectory}
-              refreshShortcut={settings?.shortcuts.refreshNotes}
-              onNoteSelect={handleSelectNote}
-              onRefresh={loadNotes}
-              onDirectoryChange={handleDirectoryChange}
-            />
+            {showSidebar && (
+              <Sidebar
+                notes={notes}
+                selectedNote={selectedNote}
+                currentDirectory={currentDirectory}
+                refreshShortcut={settings?.shortcuts.refreshNotes}
+                onNoteSelect={handleSelectNote}
+                onRefresh={loadNotes}
+                onDirectoryChange={handleDirectoryChange}
+              />
+            )}
 
             <div className="editor">
-              {selectedNote ? (
+              {isFlashcardMode && flashcardSession ? (
+                <FlashcardView
+                  cards={flashcardSession.cards}
+                  pattern={flashcardSession.pattern}
+                  onComplete={handleCompleteFlashcard}
+                  onCancel={handleCancelFlashcard}
+                />
+              ) : selectedNote ? (
                 <>
                   <div className="editor-header">
                     <h2>{selectedNote.replace('.md', '').split('.').join(' > ')}</h2>
-                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center"}}>
+                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
                       <ToggleSwitch
                         options={[
                           { value: 'edit', label: 'edit' },
@@ -229,6 +342,7 @@ function App() {
                     Press <kbd>{settings ? formatShortcut(settings.shortcuts.openCommandPalette) : 'Ctrl+K'}</kbd> to create or search for notes
                   </p>
                   <p className="hint">Try creating: <code>mathematics.calculus</code></p>
+                  <p className="hint">Start flashcards: <code>&gt;flashcard:biology.*</code></p>
                 </div>
               )}
             </div>

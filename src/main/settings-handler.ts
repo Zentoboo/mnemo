@@ -8,6 +8,7 @@ interface Settings {
     saveNote: string
     refreshNotes: string
     openSettings: string
+    toggleSidebar: string
   }
   theme: 'dark' | 'light'
   fontSize: number
@@ -20,7 +21,8 @@ const DEFAULT_SETTINGS: Settings = {
     openCommandPalette: 'CommandOrControl+K',
     saveNote: 'CommandOrControl+S',
     refreshNotes: 'CommandOrControl+R',
-    openSettings: 'CommandOrControl+,'
+    openSettings: 'CommandOrControl+,',
+    toggleSidebar: 'CommandOrControl+B'
   },
   theme: 'dark',
   fontSize: 14,

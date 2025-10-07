@@ -14,7 +14,11 @@ const api = {
   getCurrentDirectory: () => ipcRenderer.invoke('notes:getCurrentDirectory'),
   getSettings: () => ipcRenderer.invoke('settings:get'),
   updateSettings: (settings: any) => ipcRenderer.invoke('settings:update', settings),
-  resetSettings: () => ipcRenderer.invoke('settings:reset')
+  resetSettings: () => ipcRenderer.invoke('settings:reset'),
+  // Add these missing flashcard methods:
+  getFlashcards: (pattern: string) => ipcRenderer.invoke('flashcard:getCards', pattern),
+  saveFlashcardSession: (session: any) => ipcRenderer.invoke('flashcard:saveSession', session),
+  getFlashcardSessions: () => ipcRenderer.invoke('flashcard:getSessions')
 }
 
 if (process.contextIsolated) {

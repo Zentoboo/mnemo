@@ -4,6 +4,7 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import * as notesHandler from './notes-handler'
 import * as settingsHandler from './settings-handler'
+import * as flashcardHandler from './flashcard-handler'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -42,6 +43,7 @@ app.whenReady().then(async () => {
   await settingsHandler.initSettings()
   await notesHandler.initNotesDir()
 
+  // Notes IPC handlers
   ipcMain.handle('notes:getAll', async () => {
     return await notesHandler.getNotes()
   })
@@ -70,6 +72,7 @@ app.whenReady().then(async () => {
     return await notesHandler.getCurrentDirectory()
   })
 
+  // Settings IPC handlers
   ipcMain.handle('settings:get', async () => {
     return await settingsHandler.getSettings()
   })
@@ -80,6 +83,31 @@ app.whenReady().then(async () => {
 
   ipcMain.handle('settings:reset', async () => {
     return await settingsHandler.resetSettings()
+  })
+
+  // Flashcard IPC handlers
+  ipcMain.handle('flashcard:getCards', async (_, pattern: string) => {
+    const settings = await settingsHandler.getSettings()
+    if (!settings.notesDirectory) {
+      throw new Error('No notes directory selected')
+    }
+    return await flashcardHandler.getFlashcards(settings.notesDirectory, pattern)
+  })
+
+  ipcMain.handle('flashcard:saveSession', async (_, session) => {
+    const settings = await settingsHandler.getSettings()
+    if (!settings.notesDirectory) {
+      throw new Error('No notes directory selected')
+    }
+    return await flashcardHandler.saveSessionResults(settings.notesDirectory, session)
+  })
+
+  ipcMain.handle('flashcard:getSessions', async () => {
+    const settings = await settingsHandler.getSettings()
+    if (!settings.notesDirectory) {
+      return []
+    }
+    return await flashcardHandler.getFlashcardSessions(settings.notesDirectory)
   })
 
   app.on('browser-window-created', (_, window) => {
