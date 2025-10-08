@@ -5,10 +5,10 @@ import CommandPalette from './components/CommandPalette'
 import Settings from './components/Settings'
 import DirectorySelector from './components/DirectorySelector'
 import FlashcardView from './components/FlashcardView'
-import { parseShortcut, formatShortcut } from './utils/keyboard'
+import Editor from './components/Editor'
+import Notification from './components/Notification'
+import { parseShortcut } from './utils/keyboard'
 import './App.css'
-import Icon from './components/Icon'
-import ToggleSwitch from './components/ToggleSwitch'
 
 interface Note {
   filename: string
@@ -69,7 +69,11 @@ function App() {
 
   const [flashcardSession, setFlashcardSession] = useState<FlashcardSession | null>(null)
   const [isFlashcardMode, setIsFlashcardMode] = useState(false)
-  const [viewMode, setViewMode] = useState('edit')
+
+  const [notification, setNotification] = useState<{
+    message: string
+    type: 'success' | 'error' | 'info'
+  } | null>(null)
 
   useEffect(() => {
     loadSettings()
@@ -172,7 +176,10 @@ function App() {
       const cards = await window.api.getFlashcards(pattern)
 
       if (cards.length === 0) {
-        alert(`No flashcards found matching pattern: ${pattern}`)
+        setNotification({
+          message: `No flashcards found matching pattern: ${pattern}`,
+          type: 'error'
+        })
         return
       }
 
@@ -191,7 +198,10 @@ function App() {
       console.error('Failed to start flashcard session:', error)
       setIsPaletteOpen(false)
       setTimeout(() => {
-        alert('Failed to load flashcards. Make sure your notes have ## headers for questions.')
+        setNotification({
+          message: 'Failed to load flashcards. Make sure your notes have ## headers for questions.',
+          type: 'error'
+        })
       }, 100)
     }
   }
@@ -214,18 +224,22 @@ function App() {
 
       await loadNotes()
 
-      alert(`Session completed! Results saved to: ${savedFilename}`)
+      setNotification({
+        message: `Session completed! Results saved to: ${savedFilename}`,
+        type: 'success'
+      })
     } catch (error) {
       console.error('Failed to save flashcard session:', error)
-      alert('Failed to save session results')
+      setNotification({
+        message: 'Failed to save session results',
+        type: 'error'
+      })
     }
   }
 
   const handleCancelFlashcard = () => {
-    if (confirm('Are you sure you want to cancel this flashcard session? Progress will not be saved.')) {
-      setIsFlashcardMode(false)
-      setFlashcardSession(null)
-    }
+    setIsFlashcardMode(false)
+    setFlashcardSession(null)
   }
 
   const handleDirectorySelected = async (path: string) => {
@@ -251,6 +265,13 @@ function App() {
 
   return (
     <>
+      <Notification
+        isOpen={notification !== null}
+        message={notification?.message || ''}
+        type={notification?.type || 'info'}
+        onClose={() => setNotification(null)}
+      />
+
       <CommandPalette
         isOpen={isPaletteOpen}
         onClose={() => setIsPaletteOpen(false)}
@@ -302,48 +323,16 @@ function App() {
                   onComplete={handleCompleteFlashcard}
                   onCancel={handleCancelFlashcard}
                 />
-              ) : selectedNote ? (
-                <>
-                  <div className="editor-header">
-                    <h2>{selectedNote.replace('.md', '').split('.').join(' > ')}</h2>
-                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
-                      <ToggleSwitch
-                        options={[
-                          { value: 'edit', label: 'edit' },
-                          { value: 'view', label: 'view' }
-                        ]}
-                        name="view-mode"
-                        selected={viewMode}
-                        onChange={setViewMode}
-                      />
-                      <button
-                        onClick={handleSaveNote}
-                        className="header-settings-btn"
-                        title={`Save${settings ? ` (${formatShortcut(settings.shortcuts.saveNote)})` : ''}`}
-                      >
-                        <Icon name="save" size={20} />
-                      </button>
-                    </div>
-                  </div>
-                  <textarea
-                    className="editor-textarea"
-                    value={noteContent}
-                    onChange={(e) => setNoteContent(e.target.value)}
-                    placeholder="Start writing..."
-                    style={{
-                      fontSize: settings ? `${settings.fontSize}px` : '14px'
-                    }}
-                  />
-                </>
               ) : (
-                <div className="editor-empty">
-                  <h2>Welcome to Mnemo</h2>
-                  <p>
-                    Press <kbd>{settings ? formatShortcut(settings.shortcuts.openCommandPalette) : 'Ctrl+K'}</kbd> to create or search for notes
-                  </p>
-                  <p className="hint">Try creating: <code>mathematics.calculus</code></p>
-                  <p className="hint">Start flashcards: <code>&gt;flashcard:biology.*</code></p>
-                </div>
+                <Editor
+                  selectedNote={selectedNote}
+                  noteContent={noteContent}
+                  onNoteContentChange={setNoteContent}
+                  onSave={handleSaveNote}
+                  saveShortcut={settings?.shortcuts.saveNote}
+                  fontSize={settings?.fontSize || 14}
+                  commandPaletteShortcut={settings?.shortcuts.openCommandPalette}
+                />
               )}
             </div>
           </div>

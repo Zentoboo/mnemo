@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { formatShortcut } from '../utils/keyboard'
+import ConfirmModal from './ConfirmModal'
 import './Settings.css'
 
 interface Settings {
@@ -27,6 +28,8 @@ export default function Settings({ isOpen, onClose, onDirectoryChange }: Setting
   const [settings, setSettings] = useState<Settings | null>(null)
   const [editingShortcut, setEditingShortcut] = useState<string | null>(null)
   const [hasChanges, setHasChanges] = useState(false)
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false)
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
 
   useEffect(() => {
     if (isOpen) {
@@ -92,21 +95,27 @@ export default function Settings({ isOpen, onClose, onDirectoryChange }: Setting
 
   const handleCancel = () => {
     if (hasChanges) {
-      if (confirm('You have unsaved changes. Discard them?')) {
-        onClose()
-      }
+      setShowDiscardConfirm(true)
     } else {
       onClose()
     }
   }
 
-  const handleReset = async () => {
-    if (confirm('Reset all settings to default?')) {
-      const defaults = await window.api.resetSettings()
-      setOriginalSettings(defaults)
-      setSettings(defaults)
-      setHasChanges(false)
-    }
+  const handleConfirmDiscard = () => {
+    setShowDiscardConfirm(false)
+    onClose()
+  }
+
+  const handleReset = () => {
+    setShowResetConfirm(true)
+  }
+
+  const handleConfirmReset = async () => {
+    setShowResetConfirm(false)
+    const defaults = await window.api.resetSettings()
+    setOriginalSettings(defaults)
+    setSettings(defaults)
+    setHasChanges(false)
   }
 
   const handleChangeDirectory = async () => {
@@ -122,161 +131,183 @@ export default function Settings({ isOpen, onClose, onDirectoryChange }: Setting
   if (!isOpen || !settings) return null
 
   return (
-    <div className="settings-overlay" onClick={handleCancel}>
-      <div className="settings-panel" onClick={(e) => e.stopPropagation()}>
-        <div className="settings-header">
-          <h2>Settings {hasChanges && <span className="unsaved-indicator">•</span>}</h2>
-          <button className="close-button" onClick={handleCancel}>✕</button>
-        </div>
+    <>
+      <ConfirmModal
+        isOpen={showDiscardConfirm}
+        title="Unsaved Changes"
+        message="You have unsaved changes. Discard them?"
+        confirmText="Discard"
+        cancelText="Keep Editing"
+        onConfirm={handleConfirmDiscard}
+        onCancel={() => setShowDiscardConfirm(false)}
+      />
 
-        <div className="settings-content">
-          <section className="settings-section">
-            <h3>Notes Directory</h3>
+      <ConfirmModal
+        isOpen={showResetConfirm}
+        title="Reset Settings"
+        message="Reset all settings to default?"
+        confirmText="Reset"
+        cancelText="Cancel"
+        onConfirm={handleConfirmReset}
+        onCancel={() => setShowResetConfirm(false)}
+      />
 
-            <div className="setting-item directory-setting">
-              <label>Current Directory</label>
-              <div className="directory-display">
-                {settings.notesDirectory || 'Not set'}
+      <div className="settings-overlay" onClick={handleCancel}>
+        <div className="settings-panel" onClick={(e) => e.stopPropagation()}>
+          <div className="settings-header">
+            <h2>Settings {hasChanges && <span className="unsaved-indicator">•</span>}</h2>
+            <button className="close-button" onClick={handleCancel}>✕</button>
+          </div>
+
+          <div className="settings-content">
+            <section className="settings-section">
+              <h3>Notes Directory</h3>
+
+              <div className="setting-item directory-setting">
+                <label>Current Directory</label>
+                <div className="directory-display">
+                  {settings.notesDirectory || 'Not set'}
+                </div>
               </div>
-            </div>
 
-            <button onClick={handleChangeDirectory} className="secondary-button">
-              Change Notes Directory
+              <button onClick={handleChangeDirectory} className="secondary-button">
+                Change Notes Directory
+              </button>
+
+              {settings.recentDirectories.length > 0 && (
+                <div className="recent-dirs-section">
+                  <label className="recent-label">Recent Directories</label>
+                  <div className="recent-dirs-list">
+                    {settings.recentDirectories.map(dir => (
+                      <div key={dir} className="recent-dir-item">
+                        📁 {dir}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </section>
+
+            <section className="settings-section">
+              <h3>Keyboard Shortcuts</h3>
+
+              <div className="setting-item">
+                <label>Open Command Palette</label>
+                {editingShortcut === 'openCommandPalette' ? (
+                  <div className="shortcut-editor">
+                    <div className="shortcut-input recording">Press keys...</div>
+                    <button onClick={() => setEditingShortcut(null)}>Cancel</button>
+                  </div>
+                ) : (
+                  <div className="shortcut-display">
+                    <kbd>{formatShortcut(settings.shortcuts.openCommandPalette)}</kbd>
+                    <button onClick={() => setEditingShortcut('openCommandPalette')}>Change</button>
+                  </div>
+                )}
+              </div>
+
+              <div className="setting-item">
+                <label>Save Note</label>
+                {editingShortcut === 'saveNote' ? (
+                  <div className="shortcut-editor">
+                    <div className="shortcut-input recording">Press keys...</div>
+                    <button onClick={() => setEditingShortcut(null)}>Cancel</button>
+                  </div>
+                ) : (
+                  <div className="shortcut-display">
+                    <kbd>{formatShortcut(settings.shortcuts.saveNote)}</kbd>
+                    <button onClick={() => setEditingShortcut('saveNote')}>Change</button>
+                  </div>
+                )}
+              </div>
+
+              <div className="setting-item">
+                <label>Refresh Notes</label>
+                {editingShortcut === 'refreshNotes' ? (
+                  <div className="shortcut-editor">
+                    <div className="shortcut-input recording">Press keys...</div>
+                    <button onClick={() => setEditingShortcut(null)}>Cancel</button>
+                  </div>
+                ) : (
+                  <div className="shortcut-display">
+                    <kbd>{formatShortcut(settings.shortcuts.refreshNotes)}</kbd>
+                    <button onClick={() => setEditingShortcut('refreshNotes')}>Change</button>
+                  </div>
+                )}
+              </div>
+
+              <div className="setting-item">
+                <label>Toggle Sidebar</label>
+                {editingShortcut === 'toggleSidebar' ? (
+                  <div className="shortcut-editor">
+                    <div className="shortcut-input recording">Press keys...</div>
+                    <button onClick={() => setEditingShortcut(null)}>Cancel</button>
+                  </div>
+                ) : (
+                  <div className="shortcut-display">
+                    <kbd>{formatShortcut(settings.shortcuts.toggleSidebar)}</kbd>
+                    <button onClick={() => setEditingShortcut('toggleSidebar')}>Change</button>
+                  </div>
+                )}
+              </div>
+
+              <div className="setting-item">
+                <label>Open Settings</label>
+                {editingShortcut === 'openSettings' ? (
+                  <div className="shortcut-editor">
+                    <div className="shortcut-input recording">Press keys...</div>
+                    <button onClick={() => setEditingShortcut(null)}>Cancel</button>
+                  </div>
+                ) : (
+                  <div className="shortcut-display">
+                    <kbd>{formatShortcut(settings.shortcuts.openSettings)}</kbd>
+                    <button onClick={() => setEditingShortcut('openSettings')}>Change</button>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            <section className="settings-section">
+              <h3>Appearance</h3>
+
+              <div className="setting-item">
+                <label>Theme</label>
+                <select
+                  value={settings.theme}
+                  onChange={(e) => {
+                    setSettings({ ...settings, theme: e.target.value as 'dark' | 'light' })
+                  }}
+                >
+                  <option value="dark">Dark</option>
+                  <option value="light">Light</option>
+                </select>
+              </div>
+
+              <div className="setting-item">
+                <label>Font Size</label>
+                <input
+                  type="number"
+                  min="10"
+                  max="24"
+                  value={settings.fontSize}
+                  onChange={(e) => {
+                    setSettings({ ...settings, fontSize: parseInt(e.target.value) })
+                  }}
+                />
+              </div>
+            </section>
+          </div>
+
+          <div className="settings-footer">
+            <button onClick={handleReset} className="reset-button">
+              Reset to Defaults
             </button>
-
-            {settings.recentDirectories.length > 0 && (
-              <div className="recent-dirs-section">
-                <label className="recent-label">Recent Directories</label>
-                <div className="recent-dirs-list">
-                  {settings.recentDirectories.map(dir => (
-                    <div key={dir} className="recent-dir-item">
-                      📁 {dir}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </section>
-
-          <section className="settings-section">
-            <h3>Keyboard Shortcuts</h3>
-
-            <div className="setting-item">
-              <label>Open Command Palette</label>
-              {editingShortcut === 'openCommandPalette' ? (
-                <div className="shortcut-editor">
-                  <div className="shortcut-input recording">Press keys...</div>
-                  <button onClick={() => setEditingShortcut(null)}>Cancel</button>
-                </div>
-              ) : (
-                <div className="shortcut-display">
-                  <kbd>{formatShortcut(settings.shortcuts.openCommandPalette)}</kbd>
-                  <button onClick={() => setEditingShortcut('openCommandPalette')}>Change</button>
-                </div>
-              )}
-            </div>
-
-            <div className="setting-item">
-              <label>Save Note</label>
-              {editingShortcut === 'saveNote' ? (
-                <div className="shortcut-editor">
-                  <div className="shortcut-input recording">Press keys...</div>
-                  <button onClick={() => setEditingShortcut(null)}>Cancel</button>
-                </div>
-              ) : (
-                <div className="shortcut-display">
-                  <kbd>{formatShortcut(settings.shortcuts.saveNote)}</kbd>
-                  <button onClick={() => setEditingShortcut('saveNote')}>Change</button>
-                </div>
-              )}
-            </div>
-
-            <div className="setting-item">
-              <label>Refresh Notes</label>
-              {editingShortcut === 'refreshNotes' ? (
-                <div className="shortcut-editor">
-                  <div className="shortcut-input recording">Press keys...</div>
-                  <button onClick={() => setEditingShortcut(null)}>Cancel</button>
-                </div>
-              ) : (
-                <div className="shortcut-display">
-                  <kbd>{formatShortcut(settings.shortcuts.refreshNotes)}</kbd>
-                  <button onClick={() => setEditingShortcut('refreshNotes')}>Change</button>
-                </div>
-              )}
-            </div>
-
-            <div className="setting-item">
-              <label>Toggle Sidebar</label>
-              {editingShortcut === 'toggleSidebar' ? (
-                <div className="shortcut-editor">
-                  <div className="shortcut-input recording">Press keys...</div>
-                  <button onClick={() => setEditingShortcut(null)}>Cancel</button>
-                </div>
-              ) : (
-                <div className="shortcut-display">
-                  <kbd>{formatShortcut(settings.shortcuts.toggleSidebar)}</kbd>
-                  <button onClick={() => setEditingShortcut('toggleSidebar')}>Change</button>
-                </div>
-              )}
-            </div>
-
-            <div className="setting-item">
-              <label>Open Settings</label>
-              {editingShortcut === 'openSettings' ? (
-                <div className="shortcut-editor">
-                  <div className="shortcut-input recording">Press keys...</div>
-                  <button onClick={() => setEditingShortcut(null)}>Cancel</button>
-                </div>
-              ) : (
-                <div className="shortcut-display">
-                  <kbd>{formatShortcut(settings.shortcuts.openSettings)}</kbd>
-                  <button onClick={() => setEditingShortcut('openSettings')}>Change</button>
-                </div>
-              )}
-            </div>
-          </section>
-
-          <section className="settings-section">
-            <h3>Appearance</h3>
-
-            <div className="setting-item">
-              <label>Theme</label>
-              <select
-                value={settings.theme}
-                onChange={(e) => {
-                  setSettings({ ...settings, theme: e.target.value as 'dark' | 'light' })
-                }}
-              >
-                <option value="dark">Dark</option>
-                <option value="light">Light</option>
-              </select>
-            </div>
-
-            <div className="setting-item">
-              <label>Font Size</label>
-              <input
-                type="number"
-                min="10"
-                max="24"
-                value={settings.fontSize}
-                onChange={(e) => {
-                  setSettings({ ...settings, fontSize: parseInt(e.target.value) })
-                }}
-              />
-            </div>
-          </section>
-        </div>
-
-        <div className="settings-footer">
-          <button onClick={handleReset} className="reset-button">
-            Reset to Defaults
-          </button>
-          <button onClick={handleSave} className="primary-button" disabled={!hasChanges}>
-            Save Changes
-          </button>
+            <button onClick={handleSave} className="primary-button" disabled={!hasChanges}>
+              Save Changes
+            </button>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }
