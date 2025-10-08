@@ -1,0 +1,185 @@
+.markdown-view {
+    padding: 2rem;
+    /* max-width: 1200px; */
+    margin: 0 auto;
+    color: var(--text-primary);
+    line-height: 1.6;
+    overflow-y: auto;
+    height: 100%;
+    font-weight: 300;
+}
+
+/* Headings*/
+.markdown-view h1 {
+    font-size: 2em;
+    font-weight: 700;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 0.3em;
+    color: var(--text-primary);
+}
+
+.markdown-view h2 {
+    font-size: 1.5em;
+    font-weight: 700;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 0.3em;
+    color: var(--text-primary);
+}
+
+.markdown-view h3 {
+    font-size: 1.25em;
+    font-weight: 700;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    color: var(--text-primary);
+}
+
+.markdown-view h4,
+.markdown-view h5,
+.markdown-view h6 {
+    font-weight: 700;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    color: var(--text-primary);
+}
+
+/* Paragraphs */
+.markdown-view p {
+    margin-bottom: 1em;
+}
+
+/* Links */
+.markdown-view a {
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.markdown-view a:hover {
+    text-decoration: underline;
+}
+
+/* Lists */
+.markdown-view ul,
+.markdown-view ol {
+    margin-bottom: 1em;
+    padding-left: 2em;
+}
+
+.markdown-view li {
+    margin-bottom: 0.25em;
+}
+
+.markdown-view ul ul,
+.markdown-view ol ol,
+.markdown-view ul ol,
+.markdown-view ol ul {
+    margin-bottom: 0;
+    margin-top: 0.25em;
+}
+
+/* Task lists */
+.markdown-view input[type="checkbox"] {
+    margin-right: 0.5em;
+}
+
+/* Code */
+.markdown-view code {
+    background: var(--bg-tertiary);
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+    font-size: 0.9em;
+    color: var(--text-primary);
+}
+
+.markdown-view pre {
+    background: var(--bg-tertiary);
+    padding: 1em;
+    border-radius: 6px;
+    overflow-x: auto;
+    margin-bottom: 1em;
+    border: 1px solid var(--border);
+}
+
+.markdown-view pre code {
+    background: none;
+    padding: 0;
+    font-size: 0.875em;
+    line-height: 1.5;
+}
+
+/* Blockquotes */
+.markdown-view blockquote {
+    border-left: 4px solid var(--accent);
+    padding-left: 1em;
+    margin-left: 0;
+    margin-bottom: 1em;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* Tables */
+.markdown-view table {
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 1em;
+    font-size: 1em;
+}
+
+.markdown-view th,
+.markdown-view td {
+    border: 1px solid var(--border);
+    padding: 0.5em 1em;
+    text-align: left;
+    font-size: 1em;
+}
+
+.markdown-view th {
+    background: var(--bg-secondary);
+    font-weight: 700;
+}
+
+.markdown-view tr:nth-child(even) {
+    background: var(--bg-secondary);
+}
+
+/* Horizontal rule */
+.markdown-view hr {
+    border: none;
+    border-top: 2px solid var(--border);
+    margin: 2em 0;
+}
+
+/* Images */
+.markdown-view img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 6px;
+    margin: 1em 0;
+}
+
+/* Strong and emphasis */
+.markdown-view strong {
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.markdown-view em {
+    font-style: italic;
+    color: var(--accent);
+}
+
+/* Strikethrough */
+.markdown-view del {
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+
+/* First heading spacing */
+.markdown-view>*:first-child {
+    margin-top: 0;
+}

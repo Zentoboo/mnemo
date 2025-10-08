@@ -1,7 +1,10 @@
 import { useState } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import Icon from './Icon'
 import ToggleSwitch from './ToggleSwitch'
 import { formatShortcut } from '../utils/keyboard'
+import './Editor.css'
 
 interface EditorProps {
     selectedNote: string | null
@@ -60,15 +63,23 @@ function Editor({
                     </button>
                 </div>
             </div>
-            <textarea
-                className="editor-textarea"
-                value={noteContent}
-                onChange={(e) => onNoteContentChange(e.target.value)}
-                placeholder="Start writing..."
-                style={{
-                    fontSize: `${fontSize}px`
-                }}
-            />
+            {viewMode === 'edit' ? (
+                <textarea
+                    className="editor-textarea"
+                    value={noteContent}
+                    onChange={(e) => onNoteContentChange(e.target.value)}
+                    placeholder="Start writing..."
+                    style={{
+                        fontSize: `${fontSize}px`
+                    }}
+                />
+            ) : (
+                <div className="markdown-view" style={{ fontSize: `${fontSize}px` }}>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {noteContent}
+                    </ReactMarkdown>
+                </div>
+            )}
         </>
     )
 }
