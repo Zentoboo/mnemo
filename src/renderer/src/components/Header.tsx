@@ -8,6 +8,7 @@ interface HeaderProps {
     onCommandPaletteClick: () => void
     settingsShortcut?: string
     commandPaletteShortcut?: string
+    sidebarShortcut?: string
     showSidebar: boolean
     onToggleSidebar: (show: boolean) => void
 }
@@ -18,26 +19,24 @@ export default function Header({
     onCommandPaletteClick,
     settingsShortcut,
     commandPaletteShortcut,
+    sidebarShortcut,
     showSidebar,
     onToggleSidebar
 }: HeaderProps) {
     return (
         <div className="header">
-            <h1 className="header-title">{title}</h1>
-
-            <div className='sidebar-checklist'>
-                <label className='checkbox-group'>
-                    <input
-                        type="checkbox"
-                        checked={showSidebar}
-                        onChange={(e) => onToggleSidebar(e.target.checked)}
-                    />
-                    <span className='custom-checkbox'></span>
-                    <p>sidebar</p>
-                </label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <h1 className="header-title">{title}</h1>
             </div>
 
             <div className="header-actions">
+                <button
+                    className="header-settings-btn"
+                    onClick={() => onToggleSidebar(!showSidebar)}
+                    title={`Toggle Sidebar ${showSidebar ? '(Hide)' : '(Show)'} ${sidebarShortcut ? `(${formatShortcut(sidebarShortcut)})` : ''}`}
+                >
+                    <Icon name="sidebar" size={20} />
+                </button>
                 <button
                     className="header-settings-btn"
                     onClick={onCommandPaletteClick}

@@ -298,6 +298,7 @@ function App() {
             onCommandPaletteClick={() => setIsPaletteOpen(true)}
             settingsShortcut={settings?.shortcuts.openSettings}
             commandPaletteShortcut={settings?.shortcuts.openCommandPalette}
+            sidebarShortcut={settings?.shortcuts.toggleSidebar}
             showSidebar={showSidebar}
             onToggleSidebar={setShowSidebar}
           />
