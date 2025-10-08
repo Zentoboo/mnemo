@@ -343,3 +343,20 @@
   cursor: not-allowed;
   background: var(--color-primary);
 }
+/* scrollbar settings */
+.settings-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.settings-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.settings-content::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 0px;
+}
+
+.settings-content::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary);
+}

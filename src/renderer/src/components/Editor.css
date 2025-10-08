@@ -1,7 +1,7 @@
 .markdown-view {
     padding: 2rem;
     /* max-width: 1200px; */
-    margin: 0 auto;
+    margin: 0;
     color: var(--text-primary);
     line-height: 1.6;
     overflow-y: auto;
