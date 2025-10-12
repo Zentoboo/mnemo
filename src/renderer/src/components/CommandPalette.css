@@ -165,3 +165,15 @@
     font-size: 11px;
     font-weight: 600;
 }
+
+/* Add this to your existing CommandPalette.css */
+
+.command-palette-item.delete-item {
+    border-left: 3px solid #ef4444;
+}
+
+.command-palette-item.delete-item:hover,
+.command-palette-item.delete-item.selected {
+    background: rgba(239, 68, 68, 0.1);
+    border-left-color: #dc2626;
+}

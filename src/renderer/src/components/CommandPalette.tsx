@@ -7,51 +7,177 @@ interface Note {
   path: string
 }
 
+interface Command {
+  name: string
+  label: string
+  description: string
+  icon: string
+  action: string
+  needsSelection?: boolean
+}
+
 interface CommandPaletteProps {
   isOpen: boolean
   onClose: () => void
   notes: Note[]
+  selectedNote: string | null
   onSelectNote: (filename: string) => void
   onCreateNote: (hierarchy: string[]) => void
   onStartFlashcard: (pattern: string) => void
+  onDeleteNote: (filename: string) => void
 }
 
 export default function CommandPalette({
   isOpen,
   onClose,
   notes,
+  selectedNote,
   onSelectNote,
   onCreateNote,
-  onStartFlashcard
+  onStartFlashcard,
+  onDeleteNote
 }: CommandPaletteProps) {
   const [query, setQuery] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Check if query is a flashcard command
-  const isFlashcardCommand = query.trim().startsWith('>flashcard:')
-  const flashcardPattern = isFlashcardCommand
-    ? query.trim().substring(11).trim()
-    : ''
+  const availableCommands: Command[] = [
+    {
+      name: 'flashcard',
+      label: '>flashcard:',
+      description: 'Start a flashcard session with a note pattern',
+      icon: '🎴',
+      action: 'flashcard'
+    },
+    {
+      name: 'delete',
+      label: '>delete:',
+      description: 'Delete a note file',
+      icon: '🗑️',
+      action: 'delete',
+      needsSelection: true
+    }
+  ]
 
-  // Filter notes based on query
-  const filteredNotes = isFlashcardCommand
-    ? []
-    : notes.filter((note) =>
-      note.filename.toLowerCase().includes(query.toLowerCase())
-    )
+  // Parse query
+  const trimmedQuery = query.trim()
+  const isCommandMode = trimmedQuery.startsWith('>')
 
-  // Check if query looks like a new note
-  const isNewNote = !isFlashcardCommand && query.trim().length > 0 && filteredNotes.length === 0
+  let commandName = ''
+  let commandArgs = ''
+  let hasColon = false
 
-  // Parse query into hierarchy for new note
-  const getHierarchyFromQuery = (): string[] => {
-    return query
-      .trim()
-      .split('.')
-      .map((part) => part.trim())
-      .filter((part) => part.length > 0)
+  if (isCommandMode) {
+    const commandPart = trimmedQuery.slice(1) // Remove '>'
+    const colonIndex = commandPart.indexOf(':')
+
+    if (colonIndex !== -1) {
+      // Has colon: >flashcard:pattern or >delete:filename
+      hasColon = true
+      commandName = commandPart.slice(0, colonIndex).toLowerCase().trim()
+      commandArgs = commandPart.slice(colonIndex + 1).trim()
+    } else {
+      // No colon yet: >flash or >del
+      commandName = commandPart.toLowerCase().trim()
+      commandArgs = ''
+    }
   }
+
+  // Get matching commands (only show if no colon yet)
+  const matchingCommands = isCommandMode && !hasColon
+    ? availableCommands.filter(cmd => {
+      // Always show commands in autocomplete
+      return cmd.name.startsWith(commandName)
+    })
+    : []
+
+  // Check if we're in a complete command (has colon)
+  const activeCommand = hasColon
+    ? availableCommands.find(cmd => cmd.name === commandName)
+    : null
+
+  // Get file suggestions based on context
+  const getFileSuggestions = () => {
+    if (activeCommand) {
+      // We're in a command with colon, show file suggestions
+      if (commandArgs) {
+        // Filter files by the argument
+        return notes.filter(note =>
+          note.filename.toLowerCase().includes(commandArgs.toLowerCase())
+        )
+      } else {
+        // Show all files
+        return notes
+      }
+    } else if (!isCommandMode) {
+      // Normal file search
+      return notes.filter(note =>
+        note.filename.toLowerCase().includes(trimmedQuery.toLowerCase())
+      )
+    }
+    return []
+  }
+
+  const fileSuggestions = getFileSuggestions()
+
+  // Check if we should show "create new" option
+  const showCreateNew = !isCommandMode &&
+    trimmedQuery.length > 0 &&
+    fileSuggestions.length === 0
+
+  // Build results list
+  const results: Array<{
+    type: 'command' | 'file' | 'create' | 'action'
+    data: any
+  }> = []
+
+  if (matchingCommands.length > 0) {
+    // Show command suggestions
+    matchingCommands.forEach(cmd => {
+      results.push({ type: 'command', data: cmd })
+    })
+  } else if (activeCommand) {
+    // We're in a command, show file suggestions as actions
+    if (activeCommand.action === 'flashcard') {
+      fileSuggestions.forEach(note => {
+        const pattern = note.filename.replace('.md', '')
+        results.push({
+          type: 'action',
+          data: {
+            note,
+            pattern,
+            label: `Start flashcard: ${pattern}`,
+            description: note.hierarchy.join(' > '),
+            icon: '🎴',
+            action: 'flashcard'
+          }
+        })
+      })
+    } else if (activeCommand.action === 'delete') {
+      fileSuggestions.forEach(note => {
+        results.push({
+          type: 'action',
+          data: {
+            note,
+            label: `Delete: ${note.filename.replace('.md', '')}`,
+            description: 'Permanently delete this note',
+            icon: '🗑️',
+            action: 'delete'
+          }
+        })
+      })
+    }
+  } else if (!isCommandMode) {
+    // Normal file search results
+    fileSuggestions.forEach(note => {
+      results.push({ type: 'file', data: note })
+    })
+    if (showCreateNew) {
+      results.push({ type: 'create', data: trimmedQuery })
+    }
+  }
+
+  const totalResults = results.length
 
   // Reset state when opened
   useEffect(() => {
@@ -62,6 +188,13 @@ export default function CommandPalette({
     }
   }, [isOpen])
 
+  // Update selected index when results change
+  useEffect(() => {
+    if (selectedIndex >= totalResults) {
+      setSelectedIndex(Math.max(0, totalResults - 1))
+    }
+  }, [totalResults, selectedIndex])
+
   // Handle keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -71,48 +204,50 @@ export default function CommandPalette({
         onClose()
       } else if (e.key === 'ArrowDown') {
         e.preventDefault()
-        setSelectedIndex((prev) => {
-          const maxIndex = isFlashcardCommand ? 0 : (isNewNote ? 0 : filteredNotes.length - 1)
-          return Math.min(prev + 1, maxIndex)
-        })
+        setSelectedIndex(prev => Math.min(prev + 1, totalResults - 1))
       } else if (e.key === 'ArrowUp') {
         e.preventDefault()
-        setSelectedIndex((prev) => Math.max(prev - 1, 0))
+        setSelectedIndex(prev => Math.max(prev - 1, 0))
       } else if (e.key === 'Enter') {
         e.preventDefault()
-        if (isFlashcardCommand && flashcardPattern) {
-          onStartFlashcard(flashcardPattern)
-          onClose()
-        } else if (isNewNote) {
-          const hierarchy = getHierarchyFromQuery()
-          if (hierarchy.length > 0) {
-            onCreateNote(hierarchy)
-            onClose()
-          }
-        } else if (filteredNotes[selectedIndex]) {
-          onSelectNote(filteredNotes[selectedIndex].filename)
-          onClose()
-        }
+        handleSelectItem(selectedIndex)
       }
     }
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [isOpen, selectedIndex, filteredNotes, isNewNote, isFlashcardCommand, flashcardPattern, query, onClose, onCreateNote, onSelectNote, onStartFlashcard])
+  }, [isOpen, selectedIndex, totalResults])
 
-  const handleSelect = () => {
-    if (isFlashcardCommand && flashcardPattern) {
-      onStartFlashcard(flashcardPattern)
+  const handleSelectItem = (index: number) => {
+    if (index < 0 || index >= results.length) return
+
+    const item = results[index]
+
+    if (item.type === 'command') {
+      // Autocomplete the command with colon
+      const cmd = item.data as Command
+      setQuery(`>${cmd.name}:`)
+      setSelectedIndex(0)
+      // Keep focus in input
+      setTimeout(() => inputRef.current?.focus(), 0)
+    } else if (item.type === 'file') {
+      onSelectNote(item.data.filename)
       onClose()
-    } else if (isNewNote) {
-      const hierarchy = getHierarchyFromQuery()
+    } else if (item.type === 'action') {
+      const actionData = item.data
+      if (actionData.action === 'flashcard') {
+        onStartFlashcard(actionData.pattern)
+        onClose()
+      } else if (actionData.action === 'delete') {
+        onDeleteNote(actionData.note.filename)
+        onClose()
+      }
+    } else if (item.type === 'create') {
+      const hierarchy = item.data.split('.').map((s: string) => s.trim()).filter((s: string) => s.length > 0)
       if (hierarchy.length > 0) {
         onCreateNote(hierarchy)
         onClose()
       }
-    } else if (filteredNotes[selectedIndex]) {
-      onSelectNote(filteredNotes[selectedIndex].filename)
-      onClose()
     }
   }
 
@@ -125,7 +260,7 @@ export default function CommandPalette({
           ref={inputRef}
           type="text"
           className="command-palette-input"
-          placeholder="Search notes or type >flashcard:pattern (e.g., >flashcard:biology.*)"
+          placeholder="Search notes or type > for commands (>flashcard: or >delete:)"
           value={query}
           onChange={(e) => {
             setQuery(e.target.value)
@@ -134,58 +269,82 @@ export default function CommandPalette({
         />
 
         <div className="command-palette-results">
-          {isFlashcardCommand ? (
-            flashcardPattern ? (
-              <div
-                className={`command-palette-item create-new ${selectedIndex === 0 ? 'selected' : ''
-                  }`}
-                onClick={handleSelect}
-              >
-                <span className="item-icon">🎴</span>
-                <div className="item-content">
-                  <div className="item-title">Start Flashcard Session: {flashcardPattern}</div>
-                  <div className="item-path">Practice questions from matching notes</div>
-                </div>
-              </div>
-            ) : (
-              <div className="command-palette-empty">
-                Enter a pattern after {'>'}flashcard: (e.g., biology.* or specific.topic)
-              </div>
-            )
-          ) : filteredNotes.length > 0 ? (
-            filteredNotes.map((note, index) => (
-              <div
-                key={note.filename}
-                className={`command-palette-item ${index === selectedIndex ? 'selected' : ''
-                  }`}
-                onClick={() => {
-                  onSelectNote(note.filename)
-                  onClose()
-                }}
-              >
-                <span className="item-icon">📄</span>
-                <div className="item-content">
-                  <div className="item-title">{note.filename.replace('.md', '')}</div>
-                  <div className="item-path">{note.hierarchy.length} level{note.hierarchy.length > 1 ? 's' : ''}</div>
-                </div>
-              </div>
-            ))
-          ) : query.trim().length > 0 ? (
-            <div
-              className={`command-palette-item create-new ${selectedIndex === 0 ? 'selected' : ''
-                }`}
-              onClick={handleSelect}
-            >
-              <span className="item-icon">✨</span>
-              <div className="item-content">
-                <div className="item-title">Create: {getHierarchyFromQuery().join('.')}</div>
-                <div className="item-path">New markdown file</div>
-              </div>
+          {results.length === 0 ? (
+            <div className="command-palette-empty">
+              {isCommandMode
+                ? hasColon
+                  ? 'No matching files found'
+                  : 'Available commands: >flashcard: or >delete:'
+                : 'Type to search notes, or > for commands'
+              }
             </div>
           ) : (
-            <div className="command-palette-empty">
-              Type to search, create a note, or start flashcards with {'>'}{'>'}flashcard:pattern
-            </div>
+            results.map((item, index) => {
+              const isSelected = index === selectedIndex
+
+              if (item.type === 'command') {
+                const cmd = item.data as Command
+                return (
+                  <div
+                    key={`cmd-${cmd.name}`}
+                    className={`command-palette-item ${isSelected ? 'selected' : ''}`}
+                    onClick={() => handleSelectItem(index)}
+                  >
+                    <span className="item-icon">{cmd.icon}</span>
+                    <div className="item-content">
+                      <div className="item-title">{cmd.label}</div>
+                      <div className="item-path">{cmd.description}</div>
+                    </div>
+                  </div>
+                )
+              } else if (item.type === 'file') {
+                const note = item.data as Note
+                return (
+                  <div
+                    key={`file-${note.filename}`}
+                    className={`command-palette-item ${isSelected ? 'selected' : ''}`}
+                    onClick={() => handleSelectItem(index)}
+                  >
+                    <span className="item-icon">📄</span>
+                    <div className="item-content">
+                      <div className="item-title">{note.filename.replace('.md', '')}</div>
+                      <div className="item-path">{note.hierarchy.join(' > ')}</div>
+                    </div>
+                  </div>
+                )
+              } else if (item.type === 'action') {
+                const actionData = item.data
+                return (
+                  <div
+                    key={`action-${actionData.note.filename}`}
+                    className={`command-palette-item ${isSelected ? 'selected' : ''} ${actionData.action === 'delete' ? 'delete-item' : ''}`}
+                    onClick={() => handleSelectItem(index)}
+                  >
+                    <span className="item-icon">{actionData.icon}</span>
+                    <div className="item-content">
+                      <div className="item-title">{actionData.label}</div>
+                      <div className="item-path">{actionData.description}</div>
+                    </div>
+                  </div>
+                )
+              } else if (item.type === 'create') {
+                return (
+                  <div
+                    key="create"
+                    className={`command-palette-item create-new ${isSelected ? 'selected' : ''}`}
+                    onClick={() => handleSelectItem(index)}
+                  >
+                    <span className="item-icon">✨</span>
+                    <div className="item-content">
+                      <div className="item-title">Create: {item.data}</div>
+                      <div className="item-path">New markdown file</div>
+                    </div>
+                  </div>
+                )
+              }
+
+              return null
+            })
           )}
         </div>
 

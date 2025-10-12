@@ -242,6 +242,32 @@ function App() {
     setFlashcardSession(null)
   }
 
+  const handleDeleteNote = async (filename: string) => {
+    try {
+      await window.api.deleteNote(filename)
+
+      // If the deleted note was selected, clear selection
+      if (selectedNote === filename) {
+        setSelectedNote(null)
+        setNoteContent('')
+      }
+
+      // Refresh notes list
+      await loadNotes()
+
+      setNotification({
+        message: `Note "${filename}" deleted successfully`,
+        type: 'success'
+      })
+    } catch (error) {
+      console.error('Failed to delete note:', error)
+      setNotification({
+        message: 'Failed to delete note',
+        type: 'error'
+      })
+    }
+  }
+
   const handleDirectorySelected = async (path: string) => {
     setCurrentDirectory(path)
     setShowDirectorySelector(false)
@@ -276,9 +302,11 @@ function App() {
         isOpen={isPaletteOpen}
         onClose={() => setIsPaletteOpen(false)}
         notes={notes}
+        selectedNote={selectedNote}
         onSelectNote={handleSelectNote}
         onCreateNote={handleCreateNote}
         onStartFlashcard={handleStartFlashcard}
+        onDeleteNote={handleDeleteNote}
       />
 
       <Settings
@@ -298,7 +326,6 @@ function App() {
             onCommandPaletteClick={() => setIsPaletteOpen(true)}
             settingsShortcut={settings?.shortcuts.openSettings}
             commandPaletteShortcut={settings?.shortcuts.openCommandPalette}
-            sidebarShortcut={settings?.shortcuts.toggleSidebar}
             showSidebar={showSidebar}
             onToggleSidebar={setShowSidebar}
           />
@@ -313,6 +340,7 @@ function App() {
                 onNoteSelect={handleSelectNote}
                 onRefresh={loadNotes}
                 onDirectoryChange={handleDirectoryChange}
+                onDeleteNote={handleDeleteNote}
               />
             )}
 
