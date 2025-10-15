@@ -12,6 +12,7 @@
     padding: 16px 20px;
     border-bottom: 1px solid var(--color-border);
     background: var(--color-background-soft);
+    flex-shrink: 0; /* Prevent shrinking */
 }
 
 .flashcard-info {
@@ -55,9 +56,11 @@
     flex: 1;
     overflow-y: auto;
     padding: 32px;
+    padding-bottom: 32px; /* Extra padding at bottom to prevent content from hiding behind sticky button */
     display: flex;
     flex-direction: column;
     gap: 32px;
+    min-height: 0; /* Allow content to scroll */
 }
 
 .flashcard-question {
@@ -143,10 +146,23 @@
     font-size: 14px;
     line-height: 1.8;
     color: var(--color-text);
-    white-space: pre-wrap;
 }
 
-.answer-content .keyword {
+.answer-content.markdown-view {
+    padding: 0;
+    margin: 0;
+    font-size: 14px;
+}
+
+.answer-content.markdown-view p {
+    margin-bottom: 0.75em;
+}
+
+.answer-content.markdown-view p:last-child {
+    margin-bottom: 0;
+}
+
+.answer-content.markdown-view strong {
     background: var(--color-primary);
     color: white;
     padding: 2px 6px;
@@ -162,7 +178,19 @@
     color: var(--color-text-muted);
 }
 
+.flashcard-actions {
+    position: sticky;
+    bottom: 0;
+    padding: 20px 32px;
+    background: var(--color-background);
+    border-top: 1px solid var(--color-border);
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+    flex-shrink: 0;
+    z-index: 10;
+}
+
 .flashcard-btn {
+    width: 100%;
     padding: 12px 24px;
     border: none;
     border-radius: 6px;
@@ -189,6 +217,7 @@
 .flashcard-footer {
     padding: 0;
     border-top: 1px solid var(--color-border);
+    flex-shrink: 0;
 }
 
 .progress-bar {

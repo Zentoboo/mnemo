@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import ConfirmModal from './ConfirmModal'
 import './FlashcardView.css'
 
@@ -46,7 +48,6 @@ export default function FlashcardView({
     }
 
     const handleNext = () => {
-        // Save result
         const result: FlashcardResult = {
             cardId: currentCard.id,
             question: currentCard.question,
@@ -60,10 +61,8 @@ export default function FlashcardView({
         setResults(newResults)
 
         if (isLastCard) {
-            // Complete session
             onComplete(newResults)
         } else {
-            // Move to next card
             setCurrentIndex(currentIndex + 1)
             setUserAnswer('')
             setShowAnswer(false)
@@ -77,15 +76,6 @@ export default function FlashcardView({
     const handleConfirmCancel = () => {
         setShowCancelConfirm(false)
         onCancel()
-    }
-
-    const highlightKeywords = (text: string, keywords: string[]) => {
-        let highlighted = text
-        keywords.forEach(keyword => {
-            const regex = new RegExp(`(${keyword})`, 'gi')
-            highlighted = highlighted.replace(regex, '<strong class="keyword">$1</strong>')
-        })
-        return highlighted
     }
 
     return (
@@ -130,45 +120,47 @@ export default function FlashcardView({
                                 className="flashcard-textarea"
                                 autoFocus
                             />
-                            <button
-                                onClick={handleSubmit}
-                                className="flashcard-btn primary"
-                                disabled={!userAnswer.trim()}
-                            >
-                                Submit Answer
-                            </button>
                         </div>
                     ) : (
                         <div className="flashcard-comparison">
                             <div className="answer-section">
                                 <h3>Your Answer</h3>
-                                <div
-                                    className="answer-content user-answer"
-                                    dangerouslySetInnerHTML={{
-                                        __html: highlightKeywords(userAnswer, currentCard.keywords)
-                                    }}
-                                />
+                                <div className="answer-content user-answer markdown-view">
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                        {userAnswer}
+                                    </ReactMarkdown>
+                                </div>
                             </div>
 
                             <div className="answer-section">
                                 <h3>Expected Answer</h3>
-                                <div
-                                    className="answer-content expected-answer"
-                                    dangerouslySetInnerHTML={{
-                                        __html: highlightKeywords(currentCard.expectedAnswer, currentCard.keywords)
-                                    }}
-                                />
+                                <div className="answer-content expected-answer markdown-view">
+                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                        {currentCard.expectedAnswer}
+                                    </ReactMarkdown>
+                                </div>
                                 {currentCard.keywords.length > 0 && (
                                     <div className="keywords-list">
                                         <strong>Keywords:</strong> {currentCard.keywords.join(', ')}
                                     </div>
                                 )}
                             </div>
-
-                            <button onClick={handleNext} className="flashcard-btn primary">
-                                {isLastCard ? 'Complete Session' : 'Next Question'}
-                            </button>
                         </div>
+                    )}
+                </div>
+                <div className="flashcard-actions">
+                    {!showAnswer ? (
+                        <button
+                            onClick={handleSubmit}
+                            className="flashcard-btn primary"
+                            disabled={!userAnswer.trim()}
+                        >
+                            Submit Answer
+                        </button>
+                    ) : (
+                        <button onClick={handleNext} className="flashcard-btn primary">
+                            {isLastCard ? 'Complete Session' : 'Next Question'}
+                        </button>
                     )}
                 </div>
 
