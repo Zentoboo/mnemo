@@ -35,6 +35,8 @@ export interface Settings {
     refreshNotes: string
     openSettings: string
     toggleSidebar: string
+    boldText: string
+    italicText: string
   }
   theme: 'dark' | 'light'
   fontSize: number

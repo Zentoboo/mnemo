@@ -10,6 +10,9 @@ interface Settings {
     refreshNotes: string
     openSettings: string
     toggleSidebar: string
+    boldText: string
+    italicText: string
+    underlineText: string
   }
   theme: 'dark' | 'light'
   fontSize: number
@@ -189,7 +192,7 @@ export default function Settings({ isOpen, onClose, onDirectoryChange }: Setting
             </section>
 
             <section className="settings-section">
-              <h3>Keyboard Shortcuts</h3>
+              <h3>App Shortcuts</h3>
 
               <div className="setting-item">
                 <label>Open Command Palette</label>
@@ -294,6 +297,54 @@ export default function Settings({ isOpen, onClose, onDirectoryChange }: Setting
                     setSettings({ ...settings, fontSize: parseInt(e.target.value) })
                   }}
                 />
+              </div>
+            </section>
+
+            <section className="settings-section">
+              <h3>Editor Shortcuts</h3>
+              <div className="setting-item">
+                <label>Bold Text</label>
+                {editingShortcut === 'boldText' ? (
+                  <div className="shortcut-editor">
+                    <div className="shortcut-input recording">Press keys...</div>
+                    <button onClick={() => setEditingShortcut(null)}>Cancel</button>
+                  </div>
+                ) : (
+                  <div className="shortcut-display">
+                    <kbd>{formatShortcut(settings.shortcuts.boldText)}</kbd>
+                    <button onClick={() => setEditingShortcut('boldText')}>Change</button>
+                  </div>
+                )}
+              </div>
+
+              <div className="setting-item">
+                <label>Italic Text</label>
+                {editingShortcut === 'italicText' ? (
+                  <div className="shortcut-editor">
+                    <div className="shortcut-input recording">Press keys...</div>
+                    <button onClick={() => setEditingShortcut(null)}>Cancel</button>
+                  </div>
+                ) : (
+                  <div className="shortcut-display">
+                    <kbd>{formatShortcut(settings.shortcuts.italicText)}</kbd>
+                    <button onClick={() => setEditingShortcut('italicText')}>Change</button>
+                  </div>
+                )}
+              </div>
+
+              <div className="setting-item">
+                <label>Underline Text</label>
+                {editingShortcut === 'underlineText' ? (
+                  <div className="shortcut-editor">
+                    <div className="shortcut-input recording">Press keys...</div>
+                    <button onClick={() => setEditingShortcut(null)}>Cancel</button>
+                  </div>
+                ) : (
+                  <div className="shortcut-display">
+                    <kbd>{formatShortcut(settings.shortcuts.underlineText)}</kbd>
+                    <button onClick={() => setEditingShortcut('underlineText')}>Change</button>
+                  </div>
+                )}
               </div>
             </section>
           </div>

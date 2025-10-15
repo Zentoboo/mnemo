@@ -85,10 +85,7 @@ export default function CommandPalette({
 
   // Get matching commands (only show if no colon yet)
   const matchingCommands = isCommandMode && !hasColon
-    ? availableCommands.filter(cmd => {
-      // Always show commands in autocomplete
-      return cmd.name.startsWith(commandName)
-    })
+    ? availableCommands.filter(cmd => cmd.name.startsWith(commandName))
     : []
 
   // Check if we're in a complete command (has colon)
@@ -121,9 +118,13 @@ export default function CommandPalette({
   const fileSuggestions = getFileSuggestions()
 
   // Check if we should show "create new" option
+  const exactMatch = notes.some(note =>
+    note.filename.toLowerCase() === (trimmedQuery + '.md').toLowerCase()
+  )
+
   const showCreateNew = !isCommandMode &&
     trimmedQuery.length > 0 &&
-    fileSuggestions.length === 0
+    !exactMatch
 
   // Build results list
   const results: Array<{
@@ -243,7 +244,10 @@ export default function CommandPalette({
         onClose()
       }
     } else if (item.type === 'create') {
-      const hierarchy = item.data.split('.').map((s: string) => s.trim()).filter((s: string) => s.length > 0)
+      const hierarchy = item.data
+        .split('.')
+        .map((s: string) => s.trim())
+        .filter((s: string) => s.length > 0)
       if (hierarchy.length > 0) {
         onCreateNote(hierarchy)
         onClose()

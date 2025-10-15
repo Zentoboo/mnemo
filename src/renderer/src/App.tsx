@@ -49,6 +49,8 @@ interface AppSettings {
     refreshNotes: string
     openSettings: string
     toggleSidebar: string
+    boldText: string
+    italicText: string
   }
   theme: 'dark' | 'light'
   fontSize: number
@@ -361,6 +363,8 @@ function App() {
                   saveShortcut={settings?.shortcuts.saveNote}
                   fontSize={settings?.fontSize || 14}
                   commandPaletteShortcut={settings?.shortcuts.openCommandPalette}
+                  boldShortcut={settings?.shortcuts.boldText}
+                  italicShortcut={settings?.shortcuts.italicText}
                 />
               )}
             </div>
