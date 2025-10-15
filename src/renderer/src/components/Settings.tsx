@@ -12,7 +12,6 @@ interface Settings {
     toggleSidebar: string
     boldText: string
     italicText: string
-    underlineText: string
   }
   theme: 'dark' | 'light'
   fontSize: number
@@ -328,21 +327,6 @@ export default function Settings({ isOpen, onClose, onDirectoryChange }: Setting
                   <div className="shortcut-display">
                     <kbd>{formatShortcut(settings.shortcuts.italicText)}</kbd>
                     <button onClick={() => setEditingShortcut('italicText')}>Change</button>
-                  </div>
-                )}
-              </div>
-
-              <div className="setting-item">
-                <label>Underline Text</label>
-                {editingShortcut === 'underlineText' ? (
-                  <div className="shortcut-editor">
-                    <div className="shortcut-input recording">Press keys...</div>
-                    <button onClick={() => setEditingShortcut(null)}>Cancel</button>
-                  </div>
-                ) : (
-                  <div className="shortcut-display">
-                    <kbd>{formatShortcut(settings.shortcuts.underlineText)}</kbd>
-                    <button onClick={() => setEditingShortcut('underlineText')}>Change</button>
                   </div>
                 )}
               </div>
