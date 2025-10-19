@@ -5,7 +5,7 @@ import CommandPalette from './components/CommandPalette'
 import Settings from './components/Settings'
 import DirectorySelector from './components/DirectorySelector'
 import FlashcardView from './components/FlashcardView'
-import FlashcardManager from './components/FlashcardManager'
+import Manager from './components/Manager'
 import Editor from './components/Editor'
 import Notification from './components/Notification'
 import { parseShortcut } from './utils/keyboard'
@@ -59,20 +59,21 @@ interface AppSettings {
   recentDirectories: string[]
 }
 
+type ViewMode = 'editor' | 'flashcard' | 'manager'
+
 function App() {
   const [notes, setNotes] = useState<Note[]>([])
   const [selectedNote, setSelectedNote] = useState<string | null>(null)
   const [noteContent, setNoteContent] = useState<string>('')
   const [isPaletteOpen, setIsPaletteOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-  const [showFlashcardManager, setShowFlashcardManager] = useState(false)
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [showDirectorySelector, setShowDirectorySelector] = useState(true)
   const [currentDirectory, setCurrentDirectory] = useState<string | null>(null)
   const [showSidebar, setShowSidebar] = useState(true)
 
   const [flashcardSession, setFlashcardSession] = useState<FlashcardSession | null>(null)
-  const [isFlashcardMode, setIsFlashcardMode] = useState(false)
+  const [viewMode, setViewMode] = useState<ViewMode>('editor')
 
   const [notification, setNotification] = useState<{
     message: string
@@ -148,7 +149,7 @@ function App() {
       const content = await window.api.readNote(filename)
       setSelectedNote(filename)
       setNoteContent(content)
-      setIsFlashcardMode(false)
+      setViewMode('editor')
     } catch (error) {
       console.error('Failed to read note:', error)
     }
@@ -196,7 +197,7 @@ function App() {
       }
 
       setFlashcardSession(session)
-      setIsFlashcardMode(true)
+      setViewMode('flashcard')
       setSelectedNote(null)
     } catch (error) {
       console.error('Failed to start flashcard session:', error)
@@ -223,7 +224,7 @@ function App() {
       const savedFilename = await window.api.saveFlashcardSession(completedSession)
       console.log('Flashcard session saved:', savedFilename)
 
-      setIsFlashcardMode(false)
+      setViewMode('editor')
       setFlashcardSession(null)
 
       await loadNotes()
@@ -242,7 +243,7 @@ function App() {
   }
 
   const handleCancelFlashcard = () => {
-    setIsFlashcardMode(false)
+    setViewMode('editor')
     setFlashcardSession(null)
   }
 
@@ -280,6 +281,11 @@ function App() {
   const handleDirectoryChange = async () => {
     setShowDirectorySelector(true)
     setCurrentDirectory(null)
+  }
+
+  const handleShowManager = () => {
+    setViewMode('manager')
+    setSelectedNote(null)
   }
 
   if (showDirectorySelector && settings) {
@@ -320,17 +326,13 @@ function App() {
         onDirectoryChange={handleDirectoryChange}
       />
 
-      {showFlashcardManager && (
-        <FlashcardManager onClose={() => setShowFlashcardManager(false)} />
-      )}
-
       <div className="app-container">
         <div className="app-layout">
           <Header
             title="Mnemo"
             onSettingsClick={() => setIsSettingsOpen(true)}
             onCommandPaletteClick={() => setIsPaletteOpen(true)}
-            onFlashcardManagerClick={() => setShowFlashcardManager(true)}
+            onManagerClick={handleShowManager}
             settingsShortcut={settings?.shortcuts.openSettings}
             commandPaletteShortcut={settings?.shortcuts.openCommandPalette}
             sidebarShortcut={settings?.shortcuts.toggleSidebar}
@@ -353,13 +355,15 @@ function App() {
             )}
 
             <div className="editor">
-              {isFlashcardMode && flashcardSession ? (
+              {viewMode === 'flashcard' && flashcardSession ? (
                 <FlashcardView
                   cards={flashcardSession.cards}
                   pattern={flashcardSession.pattern}
                   onComplete={handleCompleteFlashcard}
                   onCancel={handleCancelFlashcard}
                 />
+              ) : viewMode === 'manager' ? (
+                <Manager />
               ) : (
                 <Editor
                   selectedNote={selectedNote}

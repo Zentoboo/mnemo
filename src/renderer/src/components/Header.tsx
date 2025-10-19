@@ -6,7 +6,7 @@ interface HeaderProps {
     title: string
     onSettingsClick: () => void
     onCommandPaletteClick: () => void
-    onFlashcardManagerClick: () => void
+    onManagerClick: () => void
     settingsShortcut?: string
     commandPaletteShortcut?: string
     sidebarShortcut?: string
@@ -18,7 +18,7 @@ export default function Header({
     title,
     onSettingsClick,
     onCommandPaletteClick,
-    onFlashcardManagerClick,
+    onManagerClick,
     settingsShortcut,
     commandPaletteShortcut,
     sidebarShortcut,
@@ -41,10 +41,10 @@ export default function Header({
                 </button>
                 <button
                     className="header-settings-btn"
-                    onClick={onFlashcardManagerClick}
-                    title="Flashcard Activity"
+                    onClick={onManagerClick}
+                    title="Overview"
                 >
-                    📊
+                    <Icon name="chart" size={20} />
                 </button>
                 <button
                     className="header-settings-btn"
