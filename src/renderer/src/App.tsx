@@ -5,6 +5,7 @@ import CommandPalette from './components/CommandPalette'
 import Settings from './components/Settings'
 import DirectorySelector from './components/DirectorySelector'
 import FlashcardView from './components/FlashcardView'
+import FlashcardManager from './components/FlashcardManager'
 import Editor from './components/Editor'
 import Notification from './components/Notification'
 import { parseShortcut } from './utils/keyboard'
@@ -64,6 +65,7 @@ function App() {
   const [noteContent, setNoteContent] = useState<string>('')
   const [isPaletteOpen, setIsPaletteOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [showFlashcardManager, setShowFlashcardManager] = useState(false)
   const [settings, setSettings] = useState<AppSettings | null>(null)
   const [showDirectorySelector, setShowDirectorySelector] = useState(true)
   const [currentDirectory, setCurrentDirectory] = useState<string | null>(null)
@@ -248,13 +250,11 @@ function App() {
     try {
       await window.api.deleteNote(filename)
 
-      // If the deleted note was selected, clear selection
       if (selectedNote === filename) {
         setSelectedNote(null)
         setNoteContent('')
       }
 
-      // Refresh notes list
       await loadNotes()
 
       setNotification({
@@ -320,12 +320,17 @@ function App() {
         onDirectoryChange={handleDirectoryChange}
       />
 
+      {showFlashcardManager && (
+        <FlashcardManager onClose={() => setShowFlashcardManager(false)} />
+      )}
+
       <div className="app-container">
         <div className="app-layout">
           <Header
             title="Mnemo"
             onSettingsClick={() => setIsSettingsOpen(true)}
             onCommandPaletteClick={() => setIsPaletteOpen(true)}
+            onFlashcardManagerClick={() => setShowFlashcardManager(true)}
             settingsShortcut={settings?.shortcuts.openSettings}
             commandPaletteShortcut={settings?.shortcuts.openCommandPalette}
             sidebarShortcut={settings?.shortcuts.toggleSidebar}

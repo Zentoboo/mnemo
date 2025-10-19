@@ -15,7 +15,8 @@ export interface ParsedFlashcards {
 
 /**
  * Parse markdown content to extract flashcards
- * Questions are marked with ## headers
+ * Questions are marked with ## headers (level-2)
+ * Level-1 headers (#) are treated as document titles and ignored
  * Expected answers are the content after the header until the next ## or end
  */
 export function parseFlashcardsFromMarkdown(
@@ -24,8 +25,19 @@ export function parseFlashcardsFromMarkdown(
 ): ParsedFlashcards {
   const cards: Flashcard[] = []
   
-  // Split by ## headers (questions)
-  const sections = content.split(/^## /gm).filter(s => s.trim())
+  // Remove the title (# header) if it exists at the start
+  // This ensures we don't treat the document title as a question
+  let processedContent = content.trim()
+  
+  // Check if content starts with a level-1 header and remove it
+  const titleMatch = processedContent.match(/^#\s+[^\n]+\n/)
+  if (titleMatch) {
+    processedContent = processedContent.slice(titleMatch[0].length)
+  }
+  
+  // Split by ## headers (level-2 headers only - questions)
+  // Use a regex that specifically matches ## at the start of a line
+  const sections = processedContent.split(/^##\s+/gm).filter(s => s.trim())
   
   sections.forEach((section, index) => {
     const lines = section.split('\n')
