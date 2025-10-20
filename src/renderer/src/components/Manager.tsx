@@ -6,34 +6,62 @@ interface DayActivity {
     count: number
 }
 
+type TimeRange = 'last-12-months' | string // string for year like '2024', '2023', etc.
+
 export default function Manager() {
     const [activityData, setActivityData] = useState<DayActivity[]>([])
+    const [allSessionDates, setAllSessionDates] = useState<string[]>([])
+    const [timeRange, setTimeRange] = useState<TimeRange>('last-12-months')
+    const [availableYears, setAvailableYears] = useState<string[]>([])
 
     useEffect(() => {
         loadActivityData()
     }, [])
 
+    useEffect(() => {
+        if (allSessionDates.length > 0) {
+            generateActivityData()
+        }
+    }, [timeRange, allSessionDates])
+
     const loadActivityData = async () => {
         try {
-            // Get all flashcard session files
             const sessionFiles = await window.api.getFlashcardSessions()
-
-            // Parse session data from filenames or read files to get completion dates
-            const activityMap = new Map<string, number>()
+            const dates: string[] = []
 
             for (const filename of sessionFiles) {
-                // Extract date from filename: flashcard-session.YYYY-MM-DD.session-timestamp.md
                 const dateMatch = filename.match(/flashcard-session\.(\d{4}-\d{2}-\d{2})/)
                 if (dateMatch) {
-                    const date = dateMatch[1]
-                    activityMap.set(date, (activityMap.get(date) || 0) + 1)
+                    dates.push(dateMatch[1])
                 }
             }
 
-            // Generate last 365 days of data
-            const days: DayActivity[] = []
-            const today = new Date()
+            setAllSessionDates(dates)
 
+            // Get unique years from dates
+            const years = Array.from(new Set(dates.map(date => date.substring(0, 4))))
+                .sort()
+                .reverse()
+
+            setAvailableYears(years)
+        } catch (error) {
+            console.error('Failed to load activity data:', error)
+        }
+    }
+
+    const generateActivityData = () => {
+        const activityMap = new Map<string, number>()
+
+        // Count sessions per date
+        for (const date of allSessionDates) {
+            activityMap.set(date, (activityMap.get(date) || 0) + 1)
+        }
+
+        const days: DayActivity[] = []
+
+        if (timeRange === 'last-12-months') {
+            // Generate last 365 days
+            const today = new Date()
             for (let i = 364; i >= 0; i--) {
                 const date = new Date(today)
                 date.setDate(date.getDate() - i)
@@ -44,11 +72,24 @@ export default function Manager() {
                     count: activityMap.get(dateStr) || 0
                 })
             }
+        } else {
+            // Generate days for specific year
+            const year = parseInt(timeRange)
+            const startDate = new Date(year, 0, 1)
+            const endDate = new Date(year, 11, 31)
 
-            setActivityData(days)
-        } catch (error) {
-            console.error('Failed to load activity data:', error)
+            let currentDate = new Date(startDate)
+            while (currentDate <= endDate) {
+                const dateStr = currentDate.toISOString().split('T')[0]
+                days.push({
+                    date: dateStr,
+                    count: activityMap.get(dateStr) || 0
+                })
+                currentDate.setDate(currentDate.getDate() + 1)
+            }
         }
+
+        setActivityData(days)
     }
 
     const getIntensityClass = (count: number): string => {
@@ -61,18 +102,32 @@ export default function Manager() {
 
     const getMonthLabels = () => {
         const months: { label: string; offset: number }[] = []
-        const today = new Date()
 
-        for (let i = 11; i >= 0; i--) {
-            const date = new Date(today)
-            date.setMonth(date.getMonth() - i)
-            const monthName = date.toLocaleDateString('en-US', { month: 'short' })
+        if (timeRange === 'last-12-months') {
+            const today = new Date()
+            for (let i = 11; i >= 0; i--) {
+                const date = new Date(today)
+                date.setMonth(date.getMonth() - i)
+                const monthName = date.toLocaleDateString('en-US', { month: 'short' })
 
-            // Calculate which week offset this month starts at
-            const daysAgo = Math.floor((today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
-            const weekOffset = Math.floor((364 - daysAgo) / 7)
+                const daysAgo = Math.floor((today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24))
+                const weekOffset = Math.floor((364 - daysAgo) / 7)
 
-            months.push({ label: monthName, offset: weekOffset })
+                months.push({ label: monthName, offset: weekOffset })
+            }
+        } else {
+            // For year view, show all 12 months
+            const year = parseInt(timeRange)
+            for (let month = 0; month < 12; month++) {
+                const date = new Date(year, month, 1)
+                const monthName = date.toLocaleDateString('en-US', { month: 'short' })
+
+                // Calculate week offset from start of year
+                const dayOfYear = Math.floor((date.getTime() - new Date(year, 0, 1).getTime()) / (1000 * 60 * 60 * 24))
+                const weekOffset = Math.floor(dayOfYear / 7)
+
+                months.push({ label: monthName, offset: weekOffset })
+            }
         }
 
         return months
@@ -84,10 +139,14 @@ export default function Manager() {
         weeks.push(activityData.slice(i, i + 7))
     }
 
-    const totalSessions = activityData.reduce((sum, day) => sum + day.count, 0)
+    const totalSessions = allSessionDates.length
     const currentStreak = calculateCurrentStreak(activityData)
     const longestStreak = calculateLongestStreak(activityData)
-    const thisWeekSessions = activityData.slice(-7).reduce((sum, day) => sum + day.count, 0)
+
+    // Calculate sessions in current time range
+    const rangeStart = activityData.length > 0 ? activityData[0].date : ''
+    const rangeEnd = activityData.length > 0 ? activityData[activityData.length - 1].date : ''
+    const sessionsInRange = activityData.reduce((sum, day) => sum + day.count, 0)
 
     return (
         <>
@@ -123,26 +182,45 @@ export default function Manager() {
                                     <span className="stat-label">Longest Streak</span>
                                 </div>
                             </div>
-
-                            <div className="stat-card">
-                                <div className="stat-icon">📅</div>
-                                <div className="stat-info">
-                                    <span className="stat-value">{thisWeekSessions}</span>
-                                    <span className="stat-label">This Week</span>
-                                </div>
-                            </div>
                         </div>
                     </section>
 
                     <section className="activity-section">
                         <h3>Activity</h3>
+
+                        <div className="activity-controls">
+                            <div className="time-range-selector">
+                                <select
+                                    value={timeRange}
+                                    onChange={(e) => setTimeRange(e.target.value)}
+                                    className="time-range-dropdown"
+                                >
+                                    <option value="last-12-months">Last 12 months</option>
+                                    {availableYears.map(year => (
+                                        <option key={year} value={year}>{year}</option>
+                                    ))}
+                                </select>
+                                <span className="session-count">{sessionsInRange} sessions</span>
+                            </div>
+
+                            <div className="legend">
+                                <span className="legend-label">Less</span>
+                                <div className="day-cell intensity-0"></div>
+                                <div className="day-cell intensity-1"></div>
+                                <div className="day-cell intensity-2"></div>
+                                <div className="day-cell intensity-3"></div>
+                                <div className="day-cell intensity-4"></div>
+                                <span className="legend-label">More</span>
+                            </div>
+                        </div>
+
                         <div className="activity-graph">
                             <div className="month-labels">
                                 {getMonthLabels().map((month, idx) => (
                                     <span
                                         key={idx}
                                         className="month-label"
-                                        style={{ left: `${month.offset * 14}px` }}
+                                        style={{ left: `${month.offset * 18 + 40}px` }}
                                     >
                                         {month.label}
                                     </span>
@@ -156,28 +234,32 @@ export default function Manager() {
                             </div>
 
                             <div className="graph-container">
-                                {weeks.map((week, weekIdx) => (
-                                    <div key={weekIdx} className="week-column">
-                                        {week.map((day) => (
-                                            <div
-                                                key={day.date}
-                                                className={`day-cell ${getIntensityClass(day.count)}`}
-                                                title={`${day.date}: ${day.count} session${day.count !== 1 ? 's' : ''}`}
-                                            />
-                                        ))}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+                                <div className="graph-scroll">
+                                    {weeks.map((week, weekIdx) => (
+                                        <div key={weekIdx} className="week-column">
+                                            {week.map((day) => {
+                                                const date = new Date(day.date)
+                                                const dayName = date.toLocaleDateString('en-US', { weekday: 'long' })
+                                                const dayNum = date.getDate()
+                                                const month = date.toLocaleDateString('en-US', { month: 'long' })
+                                                const year = date.getFullYear()
+                                                const sessionText = day.count === 1 ? 'session' : 'sessions'
+                                                const tooltip = day.count === 0
+                                                    ? `No sessions on ${dayName}, ${dayNum} ${month} ${year}`
+                                                    : `${day.count} ${sessionText} on ${dayName}, ${dayNum} ${month} ${year}`
 
-                        <div className="legend">
-                            <span className="legend-label">Less</span>
-                            <div className="day-cell intensity-0"></div>
-                            <div className="day-cell intensity-1"></div>
-                            <div className="day-cell intensity-2"></div>
-                            <div className="day-cell intensity-3"></div>
-                            <div className="day-cell intensity-4"></div>
-                            <span className="legend-label">More</span>
+                                                return (
+                                                    <div
+                                                        key={day.date}
+                                                        className={`day-cell ${getIntensityClass(day.count)}`}
+                                                        title={tooltip}
+                                                    />
+                                                )
+                                            })}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
                         </div>
                     </section>
                 </div>
@@ -189,7 +271,6 @@ export default function Manager() {
 function calculateCurrentStreak(activityData: DayActivity[]): number {
     let streak = 0
 
-    // Start from the most recent day and count backwards
     for (let i = activityData.length - 1; i >= 0; i--) {
         if (activityData[i].count > 0) {
             streak++
